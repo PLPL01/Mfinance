@@ -207,7 +207,7 @@
     <div class="sidebar-foot gu">
       <div id="syncStatus" style="margin-bottom:10px;">○ Local only (not synced)</div>
       <a href="#" id="pinLockBtn" onclick="togglePinSetup();return false;" style="color:var(--gold-soft);">🔒 Set PIN Lock</a><br>
-      <a href="#" onclick="openSyncModal();return false;" style="color:var(--gold-soft);">⚙ Sync Settings</a><br>
+      <a href="#" onclick="openSyncModal();return false;" style="color:var(--gold-soft);">⚙ Sync / Login</a><br>
       <a href="#" onclick="exportData();return false;" style="color:var(--gold-soft);">⬇ Export</a> &nbsp;|&nbsp;
       <a href="#" onclick="document.getElementById('importFile').click();return false;" style="color:var(--gold-soft);">⬆ Import</a>
       <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importData(event)">
@@ -528,7 +528,7 @@
   </div>
 </div>
 
-<!-- SYNC SETTINGS MODAL -->
+<!-- SYNC SETTINGS / LOGIN MODAL -->
 <div class="overlay" id="syncOverlay">
   <div class="modal" style="max-width:520px;">
     <h3 class="gu">Private Sync (Login)</h3>
@@ -536,17 +536,7 @@
       Only someone signed in with your exact email + password can ever read or write this data.
     </p>
 
-    <div id="syncStep1">
-      <div class="field">
-        <label class="gu">Firebase Config (paste the firebaseConfig object)</label>
-        <textarea id="syncConfig" rows="5" style="font-family:'JetBrains Mono',monospace;font-size:12px;" placeholder='{"apiKey":"..."}'></textarea>
-      </div>
-      <div class="modal-actions" style="justify-content:flex-start;">
-        <button class="btn btn-gold gu" onclick="saveFirebaseConfig()">Save Config</button>
-      </div>
-    </div>
-
-    <div id="syncStep2" style="margin-top:6px;">
+    <div id="syncStep2">
       <div id="loggedOutBox">
         <div class="field-row">
           <div class="field"><label class="gu">Email</label><input type="email" id="authEmail" placeholder="you@example.com"></div>
@@ -729,10 +719,17 @@ function updateSyncStatus(state){
 }
 
 function initFirebase(){
-  const cfgStr = localStorage.getItem('mh_firebase_config');
-  if(!cfgStr){ updateSyncStatus('off'); return; }
   try{
-    const cfg = JSON.parse(cfgStr);
+    // Hardcoded Firebase Config
+    const cfg = {
+      apiKey: "AIzaSyA3037mG-4lYelAYyJOOBlH2HMphZv3zuw",
+      authDomain: "m-finance1.firebaseapp.com",
+      projectId: "m-finance1",
+      storageBucket: "m-finance1.firebasestorage.app",
+      messagingSenderId: "389169464362",
+      appId: "1:389169464362:web:323fcfc231e5a8e8016f53"
+    };
+    
     if(!fbApp){ fbApp = firebase.initializeApp(cfg); }
     fbDb = firebase.firestore();
     fbAuth = firebase.auth();
@@ -791,12 +788,10 @@ function pushToCloud(){
 }
 
 function openSyncModal(){
-  document.getElementById('syncConfig').value = localStorage.getItem('mh_firebase_config') || '';
   refreshSyncModalUI(); openModal('syncOverlay');
 }
+
 function refreshSyncModalUI(){
-  const hasConfig = !!localStorage.getItem('mh_firebase_config');
-  document.getElementById('syncStep2').style.display = hasConfig ? '' : 'none';
   if(fbUser){
     document.getElementById('loggedOutBox').style.display = 'none';
     document.getElementById('loggedInBox').style.display = '';
@@ -805,16 +800,10 @@ function refreshSyncModalUI(){
   }else{
     document.getElementById('loggedOutBox').style.display = '';
     document.getElementById('loggedInBox').style.display = 'none';
-    document.getElementById('syncModalStatus').textContent = hasConfig ? 'Sign in to sync' : 'Paste config first';
+    document.getElementById('syncModalStatus').textContent = 'Sign in to sync your data securely.';
   }
 }
-function saveFirebaseConfig(){
-  const cfgRaw = document.getElementById('syncConfig').value.trim();
-  if(!cfgRaw){ showToast('Paste config first'); return; }
-  try{ JSON.parse(cfgRaw); } catch(e){ showToast('Invalid JSON'); return; }
-  localStorage.setItem('mh_firebase_config', cfgRaw);
-  showToast('Config saved'); initFirebase(); refreshSyncModalUI();
-}
+
 function doSignUp(){
   const email = document.getElementById('authEmail').value.trim();
   const pw = document.getElementById('authPassword').value;
@@ -828,7 +817,7 @@ function doSignIn(){
   fbAuth.signInWithEmailAndPassword(email, pw).then(()=>showToast('Signed in')).catch(e=>showToast(e.message));
 }
 function doSignOut(){ if(fbAuth) fbAuth.signOut(); showToast('Signed out locally'); }
-window.openSyncModal=openSyncModal; window.saveFirebaseConfig=saveFirebaseConfig;
+window.openSyncModal=openSyncModal; 
 window.doSignUp=doSignUp; window.doSignIn=doSignIn; window.doSignOut=doSignOut;
 
 
