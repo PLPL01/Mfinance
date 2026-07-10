@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>મારો હિસાબ — Personal Finance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --paper:#F6F2E9;
+    --paper-2:#EFE8D8;
+    --ink:#1F2A24;
+    --ink-soft:#5B6660;
+    --teal:#0F5257;
+    --teal-deep:#0A3A3E;
+    --gold:#C08A2E;
+    --gold-soft:#E7D2A0;
+    --green:#2E7D4F;
+    --red:#B0432E;
+    --line:#DCD3BC;
+    --card:#FFFDF8;
+    --radius:14px;
+    --shadow:0 2px 10px rgba(31,42,36,0.08);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--paper);color:var(--ink);
+    font-family:'Inter',sans-serif;}
+  .gu{font-family:'Noto Sans Gujarati','Inter',sans-serif;}
+  h1,h2,h3,.display{font-family:'Fraunces','Noto Sans Gujarati',serif;}
+  .num{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;}
+
+  .app{display:flex;min-height:100vh;}
+
+  /* Sidebar */
+  .sidebar{
+    width:220px;flex-shrink:0;background:var(--teal-deep);color:#EFEAD9;
+    display:flex;flex-direction:column;padding:24px 0;
+  }
+  .brand{padding:0 22px 22px;border-bottom:1px solid rgba(239,234,217,0.15);margin-bottom:14px;}
+  .brand-mark{font-size:26px;font-weight:600;font-family:'Fraunces',serif;color:var(--gold-soft);}
+  .brand-sub{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.6;margin-top:2px;}
+  .nav-item{
+    display:flex;align-items:center;gap:12px;padding:12px 22px;cursor:pointer;
+    font-size:14.5px;font-weight:500;color:#D8D2BE;border-left:3px solid transparent;
+    transition:.15s;
+  }
+  .nav-item:hover{background:rgba(255,255,255,0.05);color:#fff;}
+  .nav-item.active{background:rgba(196,150,68,0.15);border-left-color:var(--gold);color:#fff;}
+  .nav-item .ico{width:18px;text-align:center;font-size:15px;}
+  .sidebar-foot{margin-top:auto;padding:16px 22px;font-size:11px;opacity:0.45;}
+
+  .content{flex:1;padding:28px 34px 60px;max-width:1180px;}
+  .topbar{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:26px;flex-wrap:wrap;gap:10px;}
+  .topbar h1{font-size:26px;margin:0;color:var(--teal-deep);}
+  .topbar .date{font-size:13px;color:var(--ink-soft);}
+
+  .view{display:none;}
+  .view.active{display:block;animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+  /* Cards */
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:26px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);}
+  .card .label{font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+  .card .value{font-size:24px;font-weight:600;}
+  .card .sub{font-size:12px;color:var(--ink-soft);margin-top:4px;}
+  .pos{color:var(--green);} .neg{color:var(--red);}
+
+  .grid-2{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;margin-bottom:20px;}
+  @media(max-width:900px){.grid-2{grid-template-columns:1fr;}.cards{grid-template-columns:repeat(2,1fr);}}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow);}
+  .panel h3{margin:0 0 14px;font-size:16px;color:var(--teal-deep);}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .panel-head h3{margin:0;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{text-align:left;padding:8px 10px;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;
+     color:var(--ink-soft);border-bottom:1.5px solid var(--line);}
+  td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  .right{text-align:right;}
+  .center{text-align:center;}
+
+  .btn{
+    background:var(--teal);color:#fff;border:none;padding:9px 16px;border-radius:9px;
+    font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s;
+  }
+  .btn:hover{background:var(--teal-deep);}
+  .btn-gold{background:var(--gold);color:#332406;}
+  .btn-gold:hover{background:#A8791F;}
+  .btn-ghost{background:transparent;color:var(--teal);border:1.3px solid var(--teal);}
+  .btn-ghost:hover{background:rgba(15,82,87,0.06);}
+  .btn-sm{padding:5px 10px;font-size:12px;border-radius:7px;}
+  .icon-btn{background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink-soft);padding:4px 6px;border-radius:6px;}
+  .icon-btn:hover{background:var(--paper-2);color:var(--ink);}
+
+  .tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;}
+  .tag-given{background:#E4EEE7;color:var(--green);}
+  .tag-taken{background:#F6E4DE;color:var(--red);}
+  .tag-pending{background:#F5EAD1;color:#8A5A00;}
+  .tag-paid{background:#E4EEE7;color:var(--green);}
+  .tag-partial{background:#E4E9F5;color:#3B4E9E;}
+  .tag-income{background:#E4EEE7;color:var(--green);}
+  .tag-expense{background:#F6E4DE;color:var(--red);}
+
+  .empty{padding:30px 10px;text-align:center;color:var(--ink-soft);font-size:13.5px;}
+  .empty .big{font-size:30px;display:block;margin-bottom:8px;}
+
+  /* Modal */
+  .overlay{position:fixed;inset:0;background:rgba(20,26,22,0.45);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .overlay.active{display:flex;}
+  .modal{background:var(--card);border-radius:16px;width:100%;max-width:460px;padding:26px 26px 22px;box-shadow:0 20px 60px rgba(0,0,0,0.25);max-height:90vh;overflow-y:auto;}
+  .modal h3{margin:0 0 16px;color:var(--teal-deep);}
+  .field{margin-bottom:13px;}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;}
+  .field input,.field select,.field textarea{
+    width:100%;padding:9px 11px;border:1.3px solid var(--line);border-radius:8px;font-size:14px;
+    font-family:inherit;background:#fff;color:var(--ink);
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--teal);}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
+  .seg{display:flex;border:1.3px solid var(--line);border-radius:8px;overflow:hidden;}
+  .seg button{flex:1;padding:9px;border:none;background:#fff;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink-soft);}
+  .seg button.on{background:var(--teal);color:#fff;}
+
+  .subnav{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+  .subnav button{padding:7px 14px;border-radius:20px;border:1.3px solid var(--line);background:#fff;
+    font-family:inherit;font-size:13px;font-weight:600;color:var(--ink-soft);cursor:pointer;}
+  .subnav button.on{background:var(--teal-deep);color:#fff;border-color:var(--teal-deep);}
+
+  .budget-row{margin-bottom:14px;}
+  .budget-top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;}
+  .bar-bg{height:8px;background:var(--paper-2);border-radius:6px;overflow:hidden;}
+  .bar-fill{height:100%;background:var(--teal);border-radius:6px;}
+  .bar-fill.over{background:var(--red);}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--teal-deep);color:#fff;
+    padding:11px 20px;border-radius:10px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,0.2);z-index:100;
+    opacity:0;pointer-events:none;transition:.25s;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+
+  canvas{max-width:100%;}
+
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px;}
+
+  @media(max-width:760px){
+    .app{flex-direction:column;}
+    .sidebar{width:100%;flex-direction:row;overflow-x:auto;padding:10px 6px;align-items:center;}
+    .brand{display:none;}
+    .nav-item{flex-direction:column;gap:4px;padding:8px 14px;font-size:11px;border-left:none;border-bottom:3px solid transparent;white-space:nowrap;}
+    .nav-item.active{border-left:none;border-bottom-color:var(--gold);}
+    .sidebar-foot{display:none;}
+    .content{padding:18px 16px 50px;}
+    .cards{grid-template-columns:1fr 1fr;}
+    .field-row{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="sidebar">
+    <div class="brand">
+      <div class="brand-mark gu">મારો હિસાબ</div>
+      <div class="brand-sub">Personal Finance</div>
+    </div>
+    <div class="nav-item active gu" data-view="dashboard"><span class="ico">◆</span> ડેશબોર્ડ</div>
+    <div class="nav-item gu" data-view="loans"><span class="ico">₹</span> ઉધાર-લેણું</div>
+    <div class="nav-item gu" data-view="txns"><span class="ico">⇄</span> આવક-ખર્ચ</div>
+    <div class="nav-item gu" data-view="budget"><span class="ico">▤</span> બજેટ</div>
+    <div class="nav-item gu" data-view="reports"><span class="ico">◫</span> રિપોર્ટ</div>
+    <div class="sidebar-foot gu">
+      ડેટા આ browser માં જ સેવ થાય છે<br>
+      <a href="#" onclick="exportData();return false;" style="color:var(--gold-soft);">⬇ ડેટા export કરો</a> &nbsp;|&nbsp;
+      <a href="#" onclick="document.getElementById('importFile').click();return false;" style="color:var(--gold-soft);">⬆ import</a>
+      <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importData(event)">
+    </div>
+  </nav>
+
+  <main class="content">
+    <div class="topbar">
+      <h1 class="gu" id="viewTitle">ડેશબોર્ડ</h1>
+      <div class="date gu" id="todayDate"></div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <section class="view active" id="view-dashboard">
+      <div class="cards">
+        <div class="card">
+          <div class="label gu">આ મહિને આવક</div>
+          <div class="value num pos" id="dashIncome">₹0</div>
+        </div>
+        <div class="card">
+          <div class="label gu">આ મહિને ખર્ચ</div>
+          <div class="value num neg" id="dashExpense">₹0</div>
+        </div>
+        <div class="card">
+          <div class="label gu">ચોખ્ખી બચત (આ મહિને)</div>
+          <div class="value num" id="dashSavings">₹0</div>
+        </div>
+        <div class="card">
+          <div class="label gu">ઉધાર ચોખ્ખું બાકી</div>
+          <div class="value num" id="dashLoanNet">₹0</div>
+          <div class="sub gu" id="dashLoanNetSub"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="panel">
+          <h3 class="gu">છેલ્લા 6 મહિના — આવક vs ખર્ચ</h3>
+          <canvas id="chartMonthly" height="180"></canvas>
+        </div>
+        <div class="panel">
+          <h3 class="gu">આ મહિનાનો ખર્ચ — કેટેગરી પ્રમાણે</h3>
+          <canvas id="chartCategory" height="180"></canvas>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3 class="gu">તાજેતરના વ્યવહાર</h3>
+          <button class="btn btn-ghost btn-sm gu" onclick="go('txns')">બધા જુઓ</button>
+        </div>
+        <table id="dashRecentTable"><tbody></tbody></table>
+      </div>
+    </section>
+
+    <!-- LOANS -->
+    <section class="view" id="view-loans">
+      <div class="subnav">
+        <button class="on gu" data-sub="loans-entries">બધી એન્ટ્રી</button>
+        <button class="gu" data-sub="loans-people">વ્યક્તિ પ્રમાણે</button>
+      </div>
+
+      <div id="loans-entries">
+        <div class="panel-head" style="margin-bottom:14px;">
+          <div></div>
+          <button class="btn btn-gold gu" onclick="openLoanModal()">+ નવી એન્ટ્રી</button>
+        </div>
+        <div class="panel">
+          <table>
+            <thead><tr>
+              <th class="gu">નામ</th><th class="gu">પ્રકાર</th><th class="right gu">રકમ</th>
+              <th class="gu">તારીખ</th><th class="right gu">દર%</th><th class="right gu">દિવસો</th>
+              <th class="right gu">વ્યાજ</th><th class="right gu">કુલ</th><th class="gu">સ્થિતિ</th><th></th>
+            </tr></thead>
+            <tbody id="loansTable"></tbody>
+          </table>
+          <div class="empty gu" id="loansEmpty" style="display:none;">
+            <span class="big">₹</span>હજુ કોઈ એન્ટ્રી નથી. "+ નવી એન્ટ્રી" દબાવીને શરૂ કરો.
+          </div>
+        </div>
+      </div>
+
+      <div id="loans-people" style="display:none;">
+        <div class="panel">
+          <table>
+            <thead><tr>
+              <th class="gu">નામ</th><th class="right gu">આપેલ (મૂળ)</th><th class="right gu">લીધેલ (મૂળ)</th>
+              <th class="right gu">વ્યાજ (આપેલ)</th><th class="right gu">વ્યાજ (લીધેલ)</th>
+              <th class="right gu">તમને મળવાના</th><th class="right gu">તમારે આપવાના</th><th class="right gu">ચોખ્ખું</th>
+            </tr></thead>
+            <tbody id="peopleTable"></tbody>
+          </table>
+          <div class="empty gu" id="peopleEmpty" style="display:none;">કોઈ ડેટા નથી</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INCOME / EXPENSE -->
+    <section class="view" id="view-txns">
+      <div class="panel-head" style="margin-bottom:14px;">
+        <div class="seg" style="width:220px;" id="txnMonthNote"></div>
+        <button class="btn btn-gold gu" onclick="openTxnModal()">+ નવો વ્યવહાર</button>
+      </div>
+      <div class="panel">
+        <table>
+          <thead><tr>
+            <th class="gu">તારીખ</th><th class="gu">પ્રકાર</th><th class="gu">કેટેગરી</th>
+            <th class="right gu">રકમ</th><th class="gu">નોંધ</th><th></th>
+          </tr></thead>
+          <tbody id="txnsTable"></tbody>
+        </table>
+        <div class="empty gu" id="txnsEmpty" style="display:none;">
+          <span class="big">⇄</span>હજુ કોઈ વ્યવહાર નથી. "+ નવો વ્યવહાર" દબાવીને શરૂ કરો.
+        </div>
+      </div>
+    </section>
+
+    <!-- BUDGET -->
+    <section class="view" id="view-budget">
+      <div class="panel-head" style="margin-bottom:14px;">
+        <p class="gu" style="color:var(--ink-soft);font-size:13.5px;max-width:60ch;">
+          દરેક કેટેગરી માટે માસિક બજેટ સેટ કરો. આ મહિનાનો ખર્ચ એની સામે આપોઆપ સરખાવાશે.
+        </p>
+        <button class="btn btn-gold gu" onclick="openBudgetModal()">+ બજેટ સેટ કરો</button>
+      </div>
+      <div class="panel" id="budgetPanel">
+        <div class="empty gu" id="budgetEmpty">કોઈ બજેટ સેટ નથી કર્યું</div>
+      </div>
+    </section>
+
+    <!-- REPORTS -->
+    <section class="view" id="view-reports">
+      <div class="grid-2">
+        <div class="panel">
+          <h3 class="gu">માસિક વલણ (12 મહિના)</h3>
+          <canvas id="chartTrend" height="200"></canvas>
+        </div>
+        <div class="panel">
+          <h3 class="gu">ઉધાર: આપેલ vs લીધેલ</h3>
+          <canvas id="chartLoans" height="200"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <h3 class="gu">ખર્ચ — કેટેગરી બ્રેકડાઉન (બધો સમય)</h3>
+        <canvas id="chartAllCategory" height="140"></canvas>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- LOAN MODAL -->
+<div class="overlay" id="loanOverlay">
+  <div class="modal">
+    <h3 class="gu" id="loanModalTitle">નવી ઉધાર એન્ટ્રી</h3>
+    <input type="hidden" id="loanId">
+    <div class="field">
+      <label class="gu">નામ</label>
+      <input type="text" id="loanName" list="nameList" placeholder="દા.ત. રમેશભાઈ પટેલ">
+      <datalist id="nameList"></datalist>
+    </div>
+    <div class="field">
+      <label class="gu">પ્રકાર</label>
+      <div class="seg">
+        <button type="button" class="gu on" data-val="given" onclick="setLoanType('given')">આપેલ (Given)</button>
+        <button type="button" class="gu" data-val="taken" onclick="setLoanType('taken')">લીધેલ (Taken)</button>
+      </div>
+      <input type="hidden" id="loanType" value="given">
+    </div>
+    <div class="field-row">
+      <div class="field"><label class="gu">રકમ (₹)</label><input type="number" id="loanAmount" placeholder="0"></div>
+      <div class="field"><label class="gu">વ્યાજ દર % (વાર્ષિક)</label><input type="number" id="loanRate" placeholder="0"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label class="gu">તારીખ</label><input type="date" id="loanDate"></div>
+      <div class="field"><label class="gu">પરત/આજની તારીખ</label><input type="date" id="loanReturnDate"></div>
+    </div>
+    <div class="field">
+      <label class="gu">સ્થિતિ</label>
+      <select id="loanStatus">
+        <option value="Pending">Pending</option>
+        <option value="Paid">Paid</option>
+        <option value="Partial">Partial</option>
+      </select>
+    </div>
+    <div class="field"><label class="gu">નોંધ</label><input type="text" id="loanNote" placeholder="વૈકલ્પિક"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost gu" onclick="closeModal('loanOverlay')">રદ કરો</button>
+      <button class="btn gu" onclick="saveLoan()">સેવ કરો</button>
+    </div>
+  </div>
+</div>
+
+<!-- TXN MODAL -->
+<div class="overlay" id="txnOverlay">
+  <div class="modal">
+    <h3 class="gu" id="txnModalTitle">નવો વ્યવહાર</h3>
+    <input type="hidden" id="txnId">
+    <div class="field">
+      <label class="gu">પ્રકાર</label>
+      <div class="seg">
+        <button type="button" class="gu on" data-val="income" onclick="setTxnType('income')">આવક (Income)</button>
+        <button type="button" class="gu" data-val="expense" onclick="setTxnType('expense')">ખર્ચ (Expense)</button>
+      </div>
+      <input type="hidden" id="txnType" value="income">
+    </div>
+    <div class="field-row">
+      <div class="field"><label class="gu">રકમ (₹)</label><input type="number" id="txnAmount" placeholder="0"></div>
+      <div class="field"><label class="gu">તારીખ</label><input type="date" id="txnDate"></div>
+    </div>
+    <div class="field">
+      <label class="gu">કેટેગરી</label>
+      <input type="text" id="txnCategory" list="catList" placeholder="દા.ત. પગાર, જમવાનું, ભાડું">
+      <datalist id="catList"></datalist>
+    </div>
+    <div class="field"><label class="gu">નોંધ</label><input type="text" id="txnNote" placeholder="વૈકલ્પિક"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost gu" onclick="closeModal('txnOverlay')">રદ કરો</button>
+      <button class="btn gu" onclick="saveTxn()">સેવ કરો</button>
+    </div>
+  </div>
+</div>
+
+<!-- BUDGET MODAL -->
+<div class="overlay" id="budgetOverlay">
+  <div class="modal">
+    <h3 class="gu">બજેટ સેટ કરો</h3>
+    <div class="field">
+      <label class="gu">કેટેગરી</label>
+      <input type="text" id="budgetCategory" list="catList" placeholder="દા.ત. જમવાનું">
+    </div>
+    <div class="field"><label class="gu">માસિક બજેટ (₹)</label><input type="number" id="budgetAmount" placeholder="0"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost gu" onclick="closeModal('budgetOverlay')">રદ કરો</button>
+      <button class="btn gu" onclick="saveBudget()">સેવ કરો</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- STATE ---------------- */
+let loans = [];
+let txns = [];
+let budgets = {};
+let chartInstances = {};
+
+const fmt = n => '₹' + (Math.round((n||0)*100)/100).toLocaleString('en-IN',{maximumFractionDigits:0});
+const todayStr = () => new Date().toISOString().slice(0,10);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ---------------- STORAGE (localStorage - works on any hosted site) ---------------- */
+async function loadAll(){
+  try{ loans = JSON.parse(localStorage.getItem('mh_loans') || '[]'); }catch(e){ loans = []; }
+  try{ txns = JSON.parse(localStorage.getItem('mh_transactions') || '[]'); }catch(e){ txns = []; }
+  try{ budgets = JSON.parse(localStorage.getItem('mh_budgets') || '{}'); }catch(e){ budgets = {}; }
+  renderAll();
+}
+async function saveLoans(){
+  try{ localStorage.setItem('mh_loans', JSON.stringify(loans)); }
+  catch(e){ showToast('સેવ કરવામાં તકલીફ — ફરી પ્રયત્ન કરો'); }
+}
+async function saveTxns(){
+  try{ localStorage.setItem('mh_transactions', JSON.stringify(txns)); }
+  catch(e){ showToast('સેવ કરવામાં તકલીફ — ફરી પ્રયત્ન કરો'); }
+}
+async function saveBudgets(){
+  try{ localStorage.setItem('mh_budgets', JSON.stringify(budgets)); }
+  catch(e){ showToast('સેવ કરવામાં તકલીફ — ફરી પ્રયત્ન કરો'); }
+}
+
+/* ---------------- NAV ---------------- */
+const titles = {dashboard:'ડેશબોર્ડ', loans:'ઉધાર-લેણું', txns:'આવક-ખર્ચ', budget:'બજેટ', reports:'રિપોર્ટ'};
+function go(view){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.view===view));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  document.getElementById('viewTitle').textContent = titles[view];
+  if(view==='reports') renderReportCharts();
+  if(view==='dashboard') renderDashboardCharts();
+}
+document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click', ()=>go(n.dataset.view)));
+
+document.querySelectorAll('.subnav button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('.subnav button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    document.getElementById('loans-entries').style.display = b.dataset.sub==='loans-entries' ? '' : 'none';
+    document.getElementById('loans-people').style.display = b.dataset.sub==='loans-people' ? '' : 'none';
+  });
+});
+
+/* ---------------- LOAN CALC ---------------- */
+function daysBetween(d1,d2){
+  const a = new Date(d1), b = new Date(d2||todayStr());
+  return Math.max(0, Math.round((b-a)/86400000));
+}
+function loanCalc(l){
+  const days = daysBetween(l.date, l.returnDate || todayStr());
+  const interest = (l.amount||0) * ((l.rate||0)/100) * (days/365);
+  const total = (l.amount||0) + interest;
+  return {days, interest, total};
+}
+
+/* ---------------- MODALS ---------------- */
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+function openModal(id){ document.getElementById(id).classList.add('active'); }
+
+function setLoanType(t){
+  document.getElementById('loanType').value = t;
+  document.querySelectorAll('#loanOverlay .seg button').forEach(b=>b.classList.toggle('on', b.dataset.val===t));
+}
+function setTxnType(t){
+  document.getElementById('txnType').value = t;
+  document.querySelectorAll('#txnOverlay .seg button').forEach(b=>b.classList.toggle('on', b.dataset.val===t));
+}
+
+function openLoanModal(id){
+  document.getElementById('loanModalTitle').textContent = id ? 'એન્ટ્રી એડિટ કરો' : 'નવી ઉધાર એન્ટ્રી';
+  const nameOpts = [...new Set(loans.map(l=>l.name))];
+  document.getElementById('nameList').innerHTML = nameOpts.map(n=>`<option value="${n}">`).join('');
+  if(id){
+    const l = loans.find(x=>x.id===id);
+    document.getElementById('loanId').value = l.id;
+    document.getElementById('loanName').value = l.name;
+    setLoanType(l.type);
+    document.getElementById('loanAmount').value = l.amount;
+    document.getElementById('loanRate').value = l.rate;
+    document.getElementById('loanDate').value = l.date;
+    document.getElementById('loanReturnDate').value = l.returnDate;
+    document.getElementById('loanStatus').value = l.status;
+    document.getElementById('loanNote').value = l.note || '';
+  }else{
+    document.getElementById('loanId').value = '';
+    document.getElementById('loanName').value = '';
+    setLoanType('given');
+    document.getElementById('loanAmount').value = '';
+    document.getElementById('loanRate').value = '';
+    document.getElementById('loanDate').value = todayStr();
+    document.getElementById('loanReturnDate').value = todayStr();
+    document.getElementById('loanStatus').value = 'Pending';
+    document.getElementById('loanNote').value = '';
+  }
+  openModal('loanOverlay');
+}
+function saveLoan(){
+  const name = document.getElementById('loanName').value.trim();
+  const amount = parseFloat(document.getElementById('loanAmount').value);
+  if(!name){ showToast('નામ લખો'); return; }
+  if(!amount || amount<=0){ showToast('યોગ્ય રકમ લખો'); return; }
+  const id = document.getElementById('loanId').value;
+  const obj = {
+    id: id || uid(),
+    name,
+    type: document.getElementById('loanType').value,
+    amount,
+    rate: parseFloat(document.getElementById('loanRate').value)||0,
+    date: document.getElementById('loanDate').value || todayStr(),
+    returnDate: document.getElementById('loanReturnDate').value || todayStr(),
+    status: document.getElementById('loanStatus').value,
+    note: document.getElementById('loanNote').value.trim()
+  };
+  if(id){ loans = loans.map(l=>l.id===id?obj:l); }
+  else{ loans.push(obj); }
+  saveLoans();
+  closeModal('loanOverlay');
+  renderLoans(); renderDashboard();
+  showToast('એન્ટ્રી સેવ થઈ');
+}
+function deleteLoan(id){
+  if(!confirm('આ એન્ટ્રી ડિલીટ કરવી છે?')) return;
+  loans = loans.filter(l=>l.id!==id);
+  saveLoans(); renderLoans(); renderDashboard();
+}
+
+function openTxnModal(id){
+  document.getElementById('txnModalTitle').textContent = id ? 'વ્યવહાર એડિટ કરો' : 'નવો વ્યવહાર';
+  const catOpts = [...new Set(txns.map(t=>t.category))];
+  document.getElementById('catList').innerHTML = catOpts.map(c=>`<option value="${c}">`).join('');
+  if(id){
+    const t = txns.find(x=>x.id===id);
+    document.getElementById('txnId').value = t.id;
+    setTxnType(t.type);
+    document.getElementById('txnAmount').value = t.amount;
+    document.getElementById('txnDate').value = t.date;
+    document.getElementById('txnCategory').value = t.category;
+    document.getElementById('txnNote').value = t.note||'';
+  }else{
+    document.getElementById('txnId').value = '';
+    setTxnType('income');
+    document.getElementById('txnAmount').value = '';
+    document.getElementById('txnDate').value = todayStr();
+    document.getElementById('txnCategory').value = '';
+    document.getElementById('txnNote').value = '';
+  }
+  openModal('txnOverlay');
+}
+function saveTxn(){
+  const amount = parseFloat(document.getElementById('txnAmount').value);
+  const category = document.getElementById('txnCategory').value.trim();
+  if(!amount || amount<=0){ showToast('યોગ્ય રકમ લખો'); return; }
+  if(!category){ showToast('કેટેગરી લખો'); return; }
+  const id = document.getElementById('txnId').value;
+  const obj = {
+    id: id || uid(),
+    type: document.getElementById('txnType').value,
+    amount,
+    date: document.getElementById('txnDate').value || todayStr(),
+    category,
+    note: document.getElementById('txnNote').value.trim()
+  };
+  if(id){ txns = txns.map(t=>t.id===id?obj:t); }
+  else{ txns.push(obj); }
+  saveTxns();
+  closeModal('txnOverlay');
+  renderTxns(); renderDashboard(); renderBudget();
+  showToast('વ્યવહાર સેવ થયો');
+}
+function deleteTxn(id){
+  if(!confirm('આ વ્યવહાર ડિલીટ કરવો છે?')) return;
+  txns = txns.filter(t=>t.id!==id);
+  saveTxns(); renderTxns(); renderDashboard(); renderBudget();
+}
+
+function openBudgetModal(){
+  const catOpts = [...new Set(txns.map(t=>t.category))];
+  document.getElementById('catList').innerHTML = catOpts.map(c=>`<option value="${c}">`).join('');
+  document.getElementById('budgetCategory').value='';
+  document.getElementById('budgetAmount').value='';
+  openModal('budgetOverlay');
+}
+function saveBudget(){
+  const cat = document.getElementById('budgetCategory').value.trim();
+  const amt = parseFloat(document.getElementById('budgetAmount').value);
+  if(!cat || !amt || amt<=0){ showToast('કેટેગરી અને રકમ બરાબર લખો'); return; }
+  budgets[cat] = amt;
+  saveBudgets();
+  closeModal('budgetOverlay');
+  renderBudget();
+  showToast('બજેટ સેવ થયું');
+}
+function deleteBudget(cat){
+  delete budgets[cat];
+  saveBudgets(); renderBudget();
+}
+window.openLoanModal=openLoanModal; window.openTxnModal=openTxnModal; window.openBudgetModal=openBudgetModal;
+window.saveLoan=saveLoan; window.saveTxn=saveTxn; window.saveBudget=saveBudget;
+window.deleteLoan=deleteLoan; window.deleteTxn=deleteTxn; window.deleteBudget=deleteBudget;
+window.closeModal=closeModal; window.setLoanType=setLoanType; window.setTxnType=setTxnType; window.go=go;
+
+/* ---------------- RENDER: LOANS ---------------- */
+function renderLoans(){
+  const tbody = document.getElementById('loansTable');
+  tbody.innerHTML = '';
+  document.getElementById('loansEmpty').style.display = loans.length ? 'none' : '';
+  loans.slice().sort((a,b)=> new Date(b.date)-new Date(a.date)).forEach(l=>{
+    const c = loanCalc(l);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${l.name}</td>
+      <td><span class="tag ${l.type==='given'?'tag-given':'tag-taken'}">${l.type==='given'?'આપેલ':'લીધેલ'}</span></td>
+      <td class="right num">${fmt(l.amount)}</td>
+      <td class="num">${l.date}</td>
+      <td class="right num">${l.rate}%</td>
+      <td class="right num">${c.days}</td>
+      <td class="right num">${fmt(c.interest)}</td>
+      <td class="right num" style="font-weight:600;">${fmt(c.total)}</td>
+      <td><span class="tag tag-${l.status.toLowerCase()}">${l.status}</span></td>
+      <td>
+        <button class="icon-btn" onclick="openLoanModal('${l.id}')">✎</button>
+        <button class="icon-btn" onclick="deleteLoan('${l.id}')">✕</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+  renderPeople();
+}
+function renderPeople(){
+  const tbody = document.getElementById('peopleTable');
+  tbody.innerHTML = '';
+  const names = [...new Set(loans.map(l=>l.name))];
+  document.getElementById('peopleEmpty').style.display = names.length ? 'none' : '';
+  names.forEach(name=>{
+    const mine = loans.filter(l=>l.name===name);
+    let givenAmt=0, takenAmt=0, givenInt=0, takenInt=0;
+    mine.forEach(l=>{
+      const c = loanCalc(l);
+      if(l.type==='given'){ givenAmt+=l.amount; givenInt+=c.interest; }
+      else{ takenAmt+=l.amount; takenInt+=c.interest; }
+    });
+    const oweYou = givenAmt+givenInt, oweThem = takenAmt+takenInt;
+    const net = oweYou - oweThem;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${name}</td>
+      <td class="right num">${fmt(givenAmt)}</td>
+      <td class="right num">${fmt(takenAmt)}</td>
+      <td class="right num">${fmt(givenInt)}</td>
+      <td class="right num">${fmt(takenInt)}</td>
+      <td class="right num">${fmt(oweYou)}</td>
+      <td class="right num">${fmt(oweThem)}</td>
+      <td class="right num ${net>=0?'pos':'neg'}" style="font-weight:700;">${fmt(net)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ---------------- RENDER: TXNS ---------------- */
+function renderTxns(){
+  const tbody = document.getElementById('txnsTable');
+  tbody.innerHTML = '';
+  document.getElementById('txnsEmpty').style.display = txns.length ? 'none' : '';
+  txns.slice().sort((a,b)=> new Date(b.date)-new Date(a.date)).forEach(t=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="num">${t.date}</td>
+      <td><span class="tag tag-${t.type}">${t.type==='income'?'આવક':'ખર્ચ'}</span></td>
+      <td>${t.category}</td>
+      <td class="right num" style="font-weight:600;color:${t.type==='income'?'var(--green)':'var(--red)'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</td>
+      <td style="color:var(--ink-soft);font-size:12.5px;">${t.note||''}</td>
+      <td>
+        <button class="icon-btn" onclick="openTxnModal('${t.id}')">✎</button>
+        <button class="icon-btn" onclick="deleteTxn('${t.id}')">✕</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ---------------- RENDER: BUDGET ---------------- */
+function renderBudget(){
+  const panel = document.getElementById('budgetPanel');
+  const cats = Object.keys(budgets);
+  document.getElementById('budgetEmpty').style.display = cats.length ? 'none' : '';
+  panel.innerHTML = '';
+  if(!cats.length){ panel.appendChild(document.getElementById('budgetEmpty')); return; }
+  const now = new Date(); const ym = now.toISOString().slice(0,7);
+  cats.forEach(cat=>{
+    const spent = txns.filter(t=>t.type==='expense' && t.category===cat && t.date.slice(0,7)===ym)
+                       .reduce((s,t)=>s+t.amount,0);
+    const budget = budgets[cat];
+    const pct = Math.min(100, Math.round((spent/budget)*100));
+    const row = document.createElement('div');
+    row.className = 'budget-row';
+    row.innerHTML = `
+      <div class="budget-top">
+        <span>${cat}</span>
+        <span class="num">${fmt(spent)} / ${fmt(budget)}
+          <button class="icon-btn" onclick="deleteBudget('${cat}')">✕</button>
+        </span>
+      </div>
+      <div class="bar-bg"><div class="bar-fill ${spent>budget?'over':''}" style="width:${pct}%"></div></div>
+    `;
+    panel.appendChild(row);
+  });
+}
+
+/* ---------------- RENDER: DASHBOARD ---------------- */
+function monthKey(d){ return d.slice(0,7); }
+function renderDashboard(){
+  const now = new Date(); const ym = now.toISOString().slice(0,7);
+  const incomeM = txns.filter(t=>t.type==='income' && monthKey(t.date)===ym).reduce((s,t)=>s+t.amount,0);
+  const expenseM = txns.filter(t=>t.type==='expense' && monthKey(t.date)===ym).reduce((s,t)=>s+t.amount,0);
+  document.getElementById('dashIncome').textContent = fmt(incomeM);
+  document.getElementById('dashExpense').textContent = fmt(expenseM);
+  const sav = incomeM-expenseM;
+  const savEl = document.getElementById('dashSavings');
+  savEl.textContent = fmt(sav); savEl.className='value num '+(sav>=0?'pos':'neg');
+
+  let oweYou=0, oweThem=0;
+  loans.forEach(l=>{
+    const c = loanCalc(l);
+    if(l.type==='given') oweYou += c.total; else oweThem += c.total;
+  });
+  const net = oweYou-oweThem;
+  const netEl = document.getElementById('dashLoanNet');
+  netEl.textContent = fmt(Math.abs(net)); netEl.className='value num '+(net>=0?'pos':'neg');
+  document.getElementById('dashLoanNetSub').textContent = net>=0 ? 'લોકો તમને આપવાના બાકી' : 'તમારે લોકોને આપવાના બાકી';
+
+  const tbody = document.getElementById('dashRecentTable');
+  tbody.innerHTML='';
+  txns.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5).forEach(t=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="num">${t.date}</td><td>${t.category}</td>
+      <td class="right num" style="color:${t.type==='income'?'var(--green)':'var(--red)'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</td>`;
+    tbody.appendChild(tr);
+  });
+  if(!txns.length){
+    tbody.innerHTML = '<tr><td colspan="3" class="empty gu">હજુ કોઈ વ્યવહાર નથી</td></tr>';
+  }
+}
+
+/* ---------------- CHARTS ---------------- */
+function destroyChart(key){ if(chartInstances[key]){ chartInstances[key].destroy(); delete chartInstances[key]; } }
+
+function last6Months(){
+  const arr = [];
+  const now = new Date();
+  for(let i=5;i>=0;i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    arr.push(d.toISOString().slice(0,7));
+  }
+  return arr;
+}
+function last12Months(){
+  const arr = [];
+  const now = new Date();
+  for(let i=11;i>=0;i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    arr.push(d.toISOString().slice(0,7));
+  }
+  return arr;
+}
+const guMonth = m => {
+  const names = ['જાન્યુ','ફેબ્રુ','માર્ચ','એપ્રિલ','મે','જૂન','જુલાઈ','ઑગસ્ટ','સપ્ટે','ઑક્ટો','નવે','ડિસે'];
+  const idx = parseInt(m.slice(5,7))-1;
+  return names[idx];
+};
+
+function renderDashboardCharts(){
+  const months = last6Months();
+  const inc = months.map(m=> txns.filter(t=>t.type==='income'&&monthKey(t.date)===m).reduce((s,t)=>s+t.amount,0));
+  const exp = months.map(m=> txns.filter(t=>t.type==='expense'&&monthKey(t.date)===m).reduce((s,t)=>s+t.amount,0));
+  destroyChart('monthly');
+  chartInstances.monthly = new Chart(document.getElementById('chartMonthly'), {
+    type:'bar',
+    data:{ labels: months.map(guMonth),
+      datasets:[
+        {label:'આવક', data:inc, backgroundColor:'#2E7D4F', borderRadius:5},
+        {label:'ખર્ચ', data:exp, backgroundColor:'#B0432E', borderRadius:5}
+      ]},
+    options:{responsive:true, plugins:{legend:{position:'bottom', labels:{font:{family:'Inter'}}}}, scales:{y:{beginAtZero:true}}}
+  });
+
+  const now = new Date(); const ym = now.toISOString().slice(0,7);
+  const catMap = {};
+  txns.filter(t=>t.type==='expense' && monthKey(t.date)===ym).forEach(t=> catMap[t.category]=(catMap[t.category]||0)+t.amount);
+  const cats = Object.keys(catMap);
+  destroyChart('category');
+  chartInstances.category = new Chart(document.getElementById('chartCategory'), {
+    type:'doughnut',
+    data:{ labels: cats.length?cats:['કોઈ ડેટા નથી'],
+      datasets:[{ data: cats.length?cats.map(c=>catMap[c]):[1],
+        backgroundColor:['#0F5257','#C08A2E','#B0432E','#3B4E9E','#8A5A00','#5B6660','#2E7D4F','#A8791F'] }]},
+    options:{responsive:true, plugins:{legend:{position:'bottom', labels:{font:{family:'Inter'}, boxWidth:12}}}}
+  });
+}
+
+function renderReportCharts(){
+  const months = last12Months();
+  const inc = months.map(m=> txns.filter(t=>t.type==='income'&&monthKey(t.date)===m).reduce((s,t)=>s+t.amount,0));
+  const exp = months.map(m=> txns.filter(t=>t.type==='expense'&&monthKey(t.date)===m).reduce((s,t)=>s+t.amount,0));
+  destroyChart('trend');
+  chartInstances.trend = new Chart(document.getElementById('chartTrend'), {
+    type:'line',
+    data:{ labels: months.map(guMonth),
+      datasets:[
+        {label:'આવક', data:inc, borderColor:'#2E7D4F', backgroundColor:'rgba(46,125,79,0.12)', fill:true, tension:.3},
+        {label:'ખર્ચ', data:exp, borderColor:'#B0432E', backgroundColor:'rgba(176,67,46,0.12)', fill:true, tension:.3}
+      ]},
+    options:{responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true}}}
+  });
+
+  let givenTotal=0, takenTotal=0;
+  loans.forEach(l=>{ const c=loanCalc(l); if(l.type==='given') givenTotal+=c.total; else takenTotal+=c.total; });
+  destroyChart('loans');
+  chartInstances.loans = new Chart(document.getElementById('chartLoans'), {
+    type:'bar',
+    data:{ labels:['આપેલ (તમને મળવાના)','લીધેલ (તમારે આપવાના)'],
+      datasets:[{ data:[givenTotal, takenTotal], backgroundColor:['#2E7D4F','#B0432E'], borderRadius:6 }]},
+    options:{indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true}}}
+  });
+
+  const catMap = {};
+  txns.filter(t=>t.type==='expense').forEach(t=> catMap[t.category]=(catMap[t.category]||0)+t.amount);
+  const cats = Object.keys(catMap);
+  destroyChart('allcat');
+  chartInstances.allcat = new Chart(document.getElementById('chartAllCategory'), {
+    type:'bar',
+    data:{ labels: cats.length?cats:['કોઈ ડેટા નથી'],
+      datasets:[{ data: cats.length?cats.map(c=>catMap[c]):[0], backgroundColor:'#0F5257', borderRadius:5 }]},
+    options:{indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true}}}
+  });
+}
+
+function exportData(){
+  const data = {loans, txns, budgets, exportedAt: new Date().toISOString()};
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'maro-hisab-backup-'+todayStr()+'.json';
+  a.click(); URL.revokeObjectURL(url);
+  showToast('ડેટા export થયો');
+}
+function importData(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try{
+      const data = JSON.parse(e.target.result);
+      if(data.loans) loans = data.loans;
+      if(data.txns) txns = data.txns;
+      if(data.budgets) budgets = data.budgets;
+      saveLoans(); saveTxns(); saveBudgets();
+      renderAll();
+      showToast('ડેટા import થયો');
+    }catch(err){ showToast('Import ફાઈલ બરાબર નથી'); }
+  };
+  reader.readAsText(file);
+  evt.target.value = '';
+}
+window.exportData = exportData; window.importData = importData;
+
+/* ---------------- INIT ---------------- */
+function renderAll(){
+  renderLoans(); renderTxns(); renderBudget(); renderDashboard(); renderDashboardCharts();
+}
+document.getElementById('todayDate').textContent = new Date().toLocaleDateString('gu-IN', {year:'numeric',month:'long',day:'numeric'});
+loadAll();
+</script>
+</body>
+</html>
