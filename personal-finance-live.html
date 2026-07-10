@@ -450,6 +450,60 @@
   </div>
 </div>
 
+<!-- LOAN LEDGER MODAL (interest-only payment tracking) -->
+<div class="overlay" id="ledgerOverlay">
+  <div class="modal" style="max-width:600px;">
+    <h3 class="gu" id="ledgerTitle">Payment Ledger</h3>
+    <p style="color:var(--ink-soft);font-size:12.5px;margin:-8px 0 14px;">
+      Log each interest payment (or a part-principal repayment) here. Outstanding interest and principal update automatically.
+    </p>
+    <div id="ledgerSummaryCards" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;"></div>
+
+    <h3 style="font-size:14px;margin:0 0 10px;">Payment History</h3>
+    <table style="margin-bottom:16px;">
+      <thead><tr>
+        <th class="gu">Date</th><th class="gu">Type</th><th class="right gu">Amount</th>
+        <th class="gu">Mode</th><th></th>
+      </tr></thead>
+      <tbody id="ledgerPaymentsTable"></tbody>
+    </table>
+    <div class="empty gu" id="ledgerEmpty" style="display:none;padding:14px;">No payments logged yet.</div>
+
+    <h3 style="font-size:14px;margin:16px 0 10px;">Add Payment</h3>
+    <div class="field-row">
+      <div class="field">
+        <label class="gu">Payment Type</label>
+        <div class="seg">
+          <button type="button" class="on" data-val="interest" onclick="setPaymentType('interest')">Interest Payment</button>
+          <button type="button" data-val="principal" onclick="setPaymentType('principal')">Principal Repayment</button>
+        </div>
+        <input type="hidden" id="paymentType" value="interest">
+      </div>
+      <div class="field"><label class="gu">Amount (₹)</label><input type="number" id="paymentAmount" placeholder="0"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label class="gu">Date</label><input type="date" id="paymentDate"></div>
+      <div class="field">
+        <label class="gu">Mode</label>
+        <select id="paymentMode">
+          <option value="Cash">Cash</option>
+          <option value="Cheque">Cheque</option>
+          <option value="NEFT">NEFT</option>
+          <option value="RTGS">RTGS</option>
+          <option value="UPI">UPI</option>
+          <option value="Bank Transfer">Bank Transfer</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label class="gu">Note</label><input type="text" id="paymentNote" placeholder="Optional"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost gu" onclick="closeModal('ledgerOverlay')">Close</button>
+      <button class="btn gu" onclick="savePayment()">+ Add Payment</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -515,11 +569,53 @@ function daysBetween(d1,d2){
   const a = new Date(d1), b = new Date(d2||todayStr());
   return Math.max(0, Math.round((b-a)/86400000));
 }
+
+/* Computes a full ledger for a loan entry that may have multiple
+   interest / principal payments over time (interest-only loans etc.) */
+function computeLedger(l){
+  const payments = (l.payments||[]).slice().sort((a,b)=> new Date(a.date)-new Date(b.date));
+  let principal = l.amount||0;
+  let checkpoint = l.date;
+  let interestAccrued = 0, interestPaid = 0, principalPaid = 0;
+  const timeline = [];
+
+  payments.forEach(p=>{
+    const days = daysBetween(checkpoint, p.date);
+    const seg = principal * ((l.rate||0)/100) * (days/365);
+    interestAccrued += seg;
+    if(p.type === 'principal'){
+      principalPaid += p.amount;
+      principal = Math.max(0, principal - p.amount);
+    } else {
+      interestPaid += p.amount;
+    }
+    timeline.push({...p, days, segInterest: seg, principalAfter: principal});
+    checkpoint = p.date;
+  });
+
+  const endDate = l.returnDate || todayStr();
+  const daysToEnd = daysBetween(checkpoint, endDate);
+  const finalSeg = principal * ((l.rate||0)/100) * (daysToEnd/365);
+  interestAccrued += finalSeg;
+
+  const outstandingInterest = Math.max(0, interestAccrued - interestPaid);
+  const outstandingPrincipal = principal;
+  const totalOutstanding = outstandingPrincipal + outstandingInterest;
+  const totalDaysSpan = daysBetween(l.date, endDate);
+
+  return { payments, timeline, principal, interestAccrued, interestPaid, principalPaid,
+           outstandingInterest, outstandingPrincipal, totalOutstanding, totalDaysSpan };
+}
+
 function loanCalc(l){
+  if(l.payments && l.payments.length){
+    const led = computeLedger(l);
+    return { days: led.totalDaysSpan, interest: led.outstandingInterest, total: led.totalOutstanding, hasPayments:true };
+  }
   const days = daysBetween(l.date, l.returnDate || todayStr());
   const interest = (l.amount||0) * ((l.rate||0)/100) * (days/365);
   const total = (l.amount||0) + interest;
-  return {days, interest, total};
+  return {days, interest, total, hasPayments:false};
 }
 
 /* ---------------- MODALS ---------------- */
@@ -692,17 +788,18 @@ function renderLoans(){
     const c = loanCalc(l);
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${l.name}</td>
+      <td>${l.name}${c.hasPayments?' <span class="tag tag-partial" style="margin-left:4px;">ledger</span>':''}</td>
       <td><span class="tag ${l.type==='given'?'tag-given':'tag-taken'}">${l.type==='given'?'Given':'Taken'}</span></td>
       <td class="right num">${fmt(l.amount)}</td>
       <td class="num">${l.date}</td>
       <td style="font-size:12px;">${modeLabel(l.mode)}${l.ref?`<div style="color:var(--ink-soft);font-size:11px;">${l.ref}</div>`:''}</td>
       <td class="right num">${l.rate}%</td>
       <td class="right num">${c.days}</td>
-      <td class="right num">${fmt(c.interest)}</td>
+      <td class="right num">${fmt(c.interest)}${c.hasPayments?'<div style="color:var(--ink-soft);font-size:10.5px;">outstanding</div>':''}</td>
       <td class="right num" style="font-weight:600;">${fmt(c.total)}</td>
       <td><span class="tag tag-${l.status.toLowerCase()}">${l.status}</span></td>
       <td>
+        <button class="icon-btn" title="Payment ledger" onclick="openLedgerModal('${l.id}')">💳</button>
         <button class="icon-btn" onclick="openLoanModal('${l.id}')">✎</button>
         <button class="icon-btn" onclick="deleteLoan('${l.id}')">✕</button>
       </td>`;
@@ -765,14 +862,15 @@ function openPersonDetail(name){
     const c = loanCalc(l);
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><span class="tag ${l.type==='given'?'tag-given':'tag-taken'}">${l.type==='given'?'Given':'Taken'}</span></td>
+      <td><span class="tag ${l.type==='given'?'tag-given':'tag-taken'}">${l.type==='given'?'Given':'Taken'}</span>${c.hasPayments?' <span class="tag tag-partial">ledger</span>':''}</td>
       <td class="right num">${fmt(l.amount)}</td>
       <td class="num">${l.date}</td>
       <td style="font-size:12px;">${modeLabel(l.mode)}${l.ref?`<div style="color:var(--ink-soft);font-size:11px;">${l.ref}</div>`:''}</td>
-      <td class="right num">${fmt(c.interest)}</td>
+      <td class="right num">${fmt(c.interest)}${c.hasPayments?'<div style="color:var(--ink-soft);font-size:10.5px;">outstanding</div>':''}</td>
       <td class="right num" style="font-weight:600;">${fmt(c.total)}</td>
       <td><span class="tag tag-${l.status.toLowerCase()}">${l.status}</span></td>
       <td>
+        <button class="icon-btn" title="Payment ledger" onclick="openLedgerModal('${l.id}')">💳</button>
         <button class="icon-btn" onclick="closeModal('personOverlay');openLoanModal('${l.id}')">✎</button>
         <button class="icon-btn" onclick="deleteLoan('${l.id}')">✕</button>
       </td>`;
@@ -788,6 +886,91 @@ function addEntryForPerson(){
 }
 window.openPersonDetail = openPersonDetail;
 window.addEntryForPerson = addEntryForPerson;
+
+/* ---------------- LOAN LEDGER (interest-only payment tracking) ---------------- */
+let currentLedgerLoanId = null;
+function setPaymentType(t){
+  document.getElementById('paymentType').value = t;
+  document.querySelectorAll('#ledgerOverlay .seg button').forEach(b=>b.classList.toggle('on', b.dataset.val===t));
+}
+window.setPaymentType = setPaymentType;
+
+function openLedgerModal(loanId){
+  currentLedgerLoanId = loanId;
+  const l = loans.find(x=>x.id===loanId);
+  if(!l) return;
+  document.getElementById('ledgerTitle').textContent = `${l.name} — ${fmt(l.amount)} @ ${l.rate}% p.a.`;
+  document.getElementById('paymentDate').value = todayStr();
+  document.getElementById('paymentAmount').value = '';
+  document.getElementById('paymentNote').value = '';
+  document.getElementById('paymentMode').value = 'Cash';
+  setPaymentType('interest');
+  renderLedger();
+  openModal('ledgerOverlay');
+}
+window.openLedgerModal = openLedgerModal;
+
+function renderLedger(){
+  const l = loans.find(x=>x.id===currentLedgerLoanId);
+  if(!l) return;
+  const led = computeLedger(l);
+
+  document.getElementById('ledgerSummaryCards').innerHTML = `
+    <div class="card" style="padding:12px 14px;"><div class="label gu">Outstanding Principal</div><div class="value num" style="font-size:18px;">${fmt(led.outstandingPrincipal)}</div></div>
+    <div class="card" style="padding:12px 14px;"><div class="label gu">Outstanding Interest</div><div class="value num neg" style="font-size:18px;">${fmt(led.outstandingInterest)}</div></div>
+    <div class="card" style="padding:12px 14px;"><div class="label gu">Total Interest Paid So Far</div><div class="value num pos" style="font-size:18px;">${fmt(led.interestPaid)}</div></div>
+    <div class="card" style="padding:12px 14px;"><div class="label gu">Total Outstanding (Principal + Interest)</div><div class="value num" style="font-size:18px;">${fmt(led.totalOutstanding)}</div></div>
+  `;
+
+  const tbody = document.getElementById('ledgerPaymentsTable');
+  tbody.innerHTML = '';
+  document.getElementById('ledgerEmpty').style.display = led.payments.length ? 'none' : '';
+  led.payments.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).forEach(p=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="num">${p.date}</td>
+      <td><span class="tag ${p.type==='interest'?'tag-given':'tag-taken'}">${p.type==='interest'?'Interest':'Principal'}</span></td>
+      <td class="right num">${fmt(p.amount)}</td>
+      <td style="font-size:12px;">${modeLabel(p.mode)}</td>
+      <td><button class="icon-btn" onclick="deletePayment('${p.id}')">✕</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function savePayment(){
+  const l = loans.find(x=>x.id===currentLedgerLoanId);
+  if(!l) return;
+  const amount = parseFloat(document.getElementById('paymentAmount').value);
+  if(!amount || amount<=0){ showToast('Enter a valid amount'); return; }
+  if(!l.payments) l.payments = [];
+  l.payments.push({
+    id: uid(),
+    type: document.getElementById('paymentType').value,
+    amount,
+    date: document.getElementById('paymentDate').value || todayStr(),
+    mode: document.getElementById('paymentMode').value,
+    note: document.getElementById('paymentNote').value.trim()
+  });
+  saveLoans();
+  document.getElementById('paymentAmount').value = '';
+  document.getElementById('paymentNote').value = '';
+  renderLedger();
+  renderLoans(); renderDashboard();
+  if(currentPersonView) openPersonDetail(currentPersonView);
+  showToast('Payment added');
+}
+window.savePayment = savePayment;
+
+function deletePayment(paymentId){
+  const l = loans.find(x=>x.id===currentLedgerLoanId);
+  if(!l) return;
+  if(!confirm('Delete this payment?')) return;
+  l.payments = (l.payments||[]).filter(p=>p.id!==paymentId);
+  saveLoans();
+  renderLedger();
+  renderLoans(); renderDashboard();
+}
+window.deletePayment = deletePayment;
 
 
 /* ---------------- RENDER: TXNS ---------------- */
