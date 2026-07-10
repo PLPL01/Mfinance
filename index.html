@@ -1076,8 +1076,8 @@ function renderTxns(){
 
 function renderBudget(){
   const panel = document.getElementById('budgetPanel'), cats = Object.keys(budgets);
-  document.getElementById('budgetEmpty').style.display = cats.length?'none':''; panel.innerHTML='';
-  if(!cats.length){ panel.appendChild(document.getElementById('budgetEmpty')); return; }
+  panel.innerHTML='';
+  if(!cats.length){ panel.innerHTML = '<div class="empty gu" id="budgetEmpty">No budget set yet</div>'; return; }
   const ym = new Date().toISOString().slice(0,7);
   cats.forEach(cat=>{
     const spent = txns.filter(t=>t.type==='expense' && t.category===cat && t.date.slice(0,7)===ym).reduce((s,t)=>s+t.amount,0);
