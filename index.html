@@ -730,7 +730,13 @@ function initFirebase(){
       appId: "1:389169464362:web:323fcfc231e5a8e8016f53"
     };
     
-    if(!fbApp){ fbApp = firebase.initializeApp(cfg); }
+    // FIX: Check if Firebase app already exists to prevent silent crashes
+    if (!firebase.apps.length) {
+      fbApp = firebase.initializeApp(cfg);
+    } else {
+      fbApp = firebase.app();
+    }
+    
     fbDb = firebase.firestore();
     fbAuth = firebase.auth();
     updateSyncStatus('needlogin');
@@ -745,7 +751,10 @@ function initFirebase(){
       }
       refreshSyncModalUI();
     });
-  }catch(e){ updateSyncStatus('error'); }
+  }catch(e){ 
+    console.error("Firebase Start Error:", e);
+    updateSyncStatus('error'); 
+  }
 }
 
 function listenToCloud(uid){
@@ -805,12 +814,14 @@ function refreshSyncModalUI(){
 }
 
 function doSignUp(){
+  if(!fbAuth) return showToast('Error: System not ready. Refresh the page.'); // FIX: Error Check
   const email = document.getElementById('authEmail').value.trim();
   const pw = document.getElementById('authPassword').value;
   if(!email || pw.length<6) return showToast('Enter email & 6+ char password');
   fbAuth.createUserWithEmailAndPassword(email, pw).then(()=>showToast('Signed in')).catch(e=>showToast(e.message));
 }
 function doSignIn(){
+  if(!fbAuth) return showToast('Error: System not ready. Refresh the page.'); // FIX: Error Check
   const email = document.getElementById('authEmail').value.trim();
   const pw = document.getElementById('authPassword').value;
   if(!email || !pw) return showToast('Enter email and password');
