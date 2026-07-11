@@ -27,6 +27,22 @@
     --radius:14px;
     --shadow:0 2px 10px rgba(31,42,36,0.08);
   }
+  [data-theme="dark"]{
+    --paper:#151A18;
+    --paper-2:#1D2422;
+    --ink:#E9E6DC;
+    --ink-soft:#9AA39D;
+    --teal:#2F9AA0;
+    --teal-deep:#0D1615;
+    --gold:#D9A94A;
+    --gold-soft:#E7D2A0;
+    --green:#5BC98A;
+    --red:#E08669;
+    --line:#333B38;
+    --card:#1C2321;
+    --shadow:0 2px 10px rgba(0,0,0,0.35);
+  }
+  body{transition:background .2s,color .2s;}
   *{box-sizing:border-box;}
   body{margin:0;padding:0;background:var(--paper);color:var(--ink);
     font-family:'Inter',sans-serif;}
@@ -106,6 +122,10 @@
   .tag-pending{background:#F5EAD1;color:#8A5A00;}
   .tag-paid{background:#E4EEE7;color:var(--green);}
   .tag-partial{background:#E4E9F5;color:#3B4E9E;}
+  .badge-count{background:var(--red);color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:4px;}
+  .search-box{padding:9px 14px;border:1.3px solid var(--line);border-radius:20px;font-size:13.5px;
+    font-family:inherit;background:var(--card);color:var(--ink);width:280px;max-width:60vw;}
+  .search-box:focus{outline:none;border-color:var(--teal);}
   .tag-income{background:#E4EEE7;color:var(--green);}
   .tag-expense{background:#F6E4DE;color:var(--red);}
 
@@ -203,9 +223,12 @@
     <div class="nav-item gu" data-view="loans"><span class="ico">₹</span> Loans</div>
     <div class="nav-item gu" data-view="txns"><span class="ico">⇄</span> Income & Expense</div>
     <div class="nav-item gu" data-view="budget"><span class="ico">▤</span> Budget</div>
+    <div class="nav-item gu" data-view="reminders"><span class="ico">🔔</span> Reminders <span id="reminderBadge" class="badge-count" style="display:none;">0</span></div>
     <div class="nav-item gu" data-view="reports"><span class="ico">◫</span> Reports</div>
+    <div class="nav-item gu" data-view="diagnostics"><span class="ico">🧪</span> Diagnostics</div>
     <div class="sidebar-foot gu">
       <div id="syncStatus" style="margin-bottom:10px;">○ Local only (not synced)</div>
+      <a href="#" onclick="toggleTheme();return false;" style="color:var(--gold-soft);" id="themeToggleLink">🌙 Dark Mode</a><br>
       <a href="#" id="pinLockBtn" onclick="togglePinSetup();return false;" style="color:var(--gold-soft);">🔒 Set PIN Lock</a><br>
       <a href="#" onclick="openSyncModal();return false;" style="color:var(--gold-soft);">⚙ Sync / Login</a><br>
       <a href="#" onclick="exportData();return false;" style="color:var(--gold-soft);">⬇ Export</a> &nbsp;|&nbsp;
@@ -271,7 +294,7 @@
 
       <div id="loans-entries">
         <div class="panel-head" style="margin-bottom:14px;">
-          <div></div>
+          <input type="text" id="loanSearch" class="search-box" placeholder="🔍 Search by name, mode, note…" oninput="renderLoans()">
           <button class="btn btn-gold gu" onclick="openLoanModal()">+ New Entry</button>
         </div>
         <div class="panel">
@@ -308,7 +331,7 @@
     <!-- INCOME / EXPENSE -->
     <section class="view" id="view-txns">
       <div class="panel-head" style="margin-bottom:14px;">
-        <div class="seg" style="width:220px;" id="txnMonthNote"></div>
+        <input type="text" id="txnSearch" class="search-box" placeholder="🔍 Search by category, note…" oninput="renderTxns()">
         <button class="btn btn-gold gu" onclick="openTxnModal()">+ New Transaction</button>
       </div>
       <div class="panel">
@@ -338,6 +361,34 @@
       </div>
     </section>
 
+    <!-- REMINDERS -->
+    <section class="view" id="view-reminders">
+      <div class="panel-head" style="margin-bottom:14px;">
+        <p class="gu" style="color:var(--ink-soft);font-size:13.5px;max-width:60ch;">
+          Loan entries that are due (return date passed) or coming up in the next 7 days. Allow browser notifications for an alert when you open the app.
+        </p>
+        <button class="btn btn-ghost gu" onclick="requestNotifyPermission()">🔔 Enable Notifications</button>
+      </div>
+
+      <div class="panel" style="margin-bottom:18px;">
+        <h3 class="gu" style="color:var(--red);">⚠ Overdue</h3>
+        <table>
+          <thead><tr><th class="gu">Name</th><th class="gu">Type</th><th class="right gu">Amount</th><th class="gu">Due Date</th><th class="right gu">Days Overdue</th><th></th></tr></thead>
+          <tbody id="overdueTable"></tbody>
+        </table>
+        <div class="empty gu" id="overdueEmpty" style="display:none;">Nothing overdue 🎉</div>
+      </div>
+
+      <div class="panel">
+        <h3 class="gu" style="color:var(--gold);">📅 Due in Next 7 Days</h3>
+        <table>
+          <thead><tr><th class="gu">Name</th><th class="gu">Type</th><th class="right gu">Amount</th><th class="gu">Due Date</th><th class="right gu">Days Left</th><th></th></tr></thead>
+          <tbody id="dueSoonTable"></tbody>
+        </table>
+        <div class="empty gu" id="dueSoonEmpty" style="display:none;">Nothing due soon</div>
+      </div>
+    </section>
+
     <!-- REPORTS -->
     <section class="view" id="view-reports">
       <div class="grid-2">
@@ -353,6 +404,26 @@
       <div class="panel">
         <h3 class="gu">Expenses — Category Breakdown (All Time)</h3>
         <canvas id="chartAllCategory" height="140"></canvas>
+      </div>
+    </section>
+
+    <!-- DIAGNOSTICS / SELF-TEST -->
+    <section class="view" id="view-diagnostics">
+      <div class="panel-head" style="margin-bottom:14px;">
+        <p class="gu" style="color:var(--ink-soft);font-size:13.5px;max-width:65ch;">
+          Runs a set of built-in checks on the interest/ledger math and confirms the numbers shown on
+          the Dashboard actually match your raw data — so calculation or refresh bugs get caught immediately
+          instead of going unnoticed.
+        </p>
+        <button class="btn btn-gold gu" onclick="runDiagnostics()">▶ Run All Tests</button>
+      </div>
+      <div class="cards" id="diagSummary" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;"></div>
+      <div class="panel">
+        <table>
+          <thead><tr><th style="width:36px;"></th><th class="gu">Check</th><th class="right gu">Expected</th><th class="right gu">Actual</th></tr></thead>
+          <tbody id="diagResultsTable"></tbody>
+        </table>
+        <div class="empty gu" id="diagEmpty">Press "▶ Run All Tests" to check everything is calculating correctly.</div>
       </div>
     </section>
   </main>
@@ -584,6 +655,94 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'), 2200);
 }
 
+/* ---------------- DARK MODE ---------------- */
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  const link = document.getElementById('themeToggleLink');
+  if(link) link.textContent = theme==='dark' ? '☀ Light Mode' : '🌙 Dark Mode';
+  Object.keys(chartInstances).forEach(k=>{ if(chartInstances[k]) chartInstances[k].destroy(); });
+  chartInstances = {};
+  renderDashboardCharts();
+  if(document.getElementById('view-reports').classList.contains('active')) renderReportCharts();
+}
+function toggleTheme(){
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current==='dark' ? 'light' : 'dark';
+  localStorage.setItem('mh_theme', next);
+  applyTheme(next);
+}
+window.toggleTheme = toggleTheme;
+
+/* ---------------- REMINDERS ---------------- */
+function requestNotifyPermission(){
+  if(!('Notification' in window)){ showToast('Notifications not supported on this browser'); return; }
+  Notification.requestPermission().then(p=>{
+    if(p==='granted') showToast('Notifications enabled — you will get an alert when you open the app with due items');
+    else showToast('Notifications blocked. You can still see due items on the Reminders tab.');
+  });
+}
+window.requestNotifyPermission = requestNotifyPermission;
+
+function getDueLists(){
+  const today = todayStr();
+  const overdue = [], dueSoon = [];
+  loans.forEach(l=>{
+    if(l.status === 'Paid') return;
+    const due = l.returnDate || l.date;
+    const daysDiff = daysBetween(today, due) * (due < today ? -1 : 1);
+    if(due < today) overdue.push({l, daysOver: daysBetween(due, today)});
+    else if(due >= today && daysBetween(today, due) <= 7) dueSoon.push({l, daysLeft: daysBetween(today, due)});
+  });
+  overdue.sort((a,b)=>b.daysOver-a.daysOver);
+  dueSoon.sort((a,b)=>a.daysLeft-b.daysLeft);
+  return {overdue, dueSoon};
+}
+
+function renderReminders(){
+  const {overdue, dueSoon} = getDueLists();
+  updateReminderBadge();
+
+  const ot = document.getElementById('overdueTable'); ot.innerHTML='';
+  document.getElementById('overdueEmpty').style.display = overdue.length ? 'none' : '';
+  overdue.forEach(({l,daysOver})=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${l.name}</td><td><span class="tag ${l.type==='given'?'tag-given':'tag-taken'}">${l.type==='given'?'Given':'Taken'}</span></td>
+      <td class="right num">${fmt(l.amount)}</td><td class="num">${l.returnDate||l.date}</td>
+      <td class="right num" style="color:var(--red);font-weight:600;">${daysOver}d</td>
+      <td><button class="icon-btn" onclick="openLoanModal('${l.id}')">✎</button></td>`;
+    ot.appendChild(tr);
+  });
+
+  const dt = document.getElementById('dueSoonTable'); dt.innerHTML='';
+  document.getElementById('dueSoonEmpty').style.display = dueSoon.length ? 'none' : '';
+  dueSoon.forEach(({l,daysLeft})=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${l.name}</td><td><span class="tag ${l.type==='given'?'tag-given':'tag-taken'}">${l.type==='given'?'Given':'Taken'}</span></td>
+      <td class="right num">${fmt(l.amount)}</td><td class="num">${l.returnDate||l.date}</td>
+      <td class="right num" style="color:var(--gold);font-weight:600;">${daysLeft===0?'Today':daysLeft+'d'}</td>
+      <td><button class="icon-btn" onclick="openLoanModal('${l.id}')">✎</button></td>`;
+    dt.appendChild(tr);
+  });
+}
+window.renderReminders = renderReminders;
+
+function updateReminderBadge(){
+  const {overdue, dueSoon} = getDueLists();
+  const total = overdue.length + dueSoon.length;
+  const badge = document.getElementById('reminderBadge');
+  if(badge){ badge.style.display = total ? '' : 'none'; badge.textContent = total; }
+  return total;
+}
+function checkReminderBadgeOnLoad(){
+  const total = updateReminderBadge();
+  if(total && 'Notification' in window && Notification.permission === 'granted'){
+    const {overdue, dueSoon} = getDueLists();
+    new Notification('My Ledger — Reminders', {
+      body: `${overdue.length} overdue, ${dueSoon.length} due within 7 days.`
+    });
+  }
+}
+
 /* ---------------- APP PIN LOCK (Universal Sync) ---------------- */
 let appPin = localStorage.getItem('mh_app_pin') || '';
 let enteredPin = '';
@@ -702,7 +861,7 @@ async function loadAll(){
   renderAll();
   initFirebase();
 }
-async function saveLoans(){ try{ localStorage.setItem('mh_loans', JSON.stringify(loans)); }catch(e){} pushToCloud(); }
+async function saveLoans(){ try{ localStorage.setItem('mh_loans', JSON.stringify(loans)); }catch(e){} pushToCloud(); if(typeof updateReminderBadge==='function') updateReminderBadge(); }
 async function saveTxns(){ try{ localStorage.setItem('mh_transactions', JSON.stringify(txns)); }catch(e){} pushToCloud(); }
 async function saveBudgets(){ try{ localStorage.setItem('mh_budgets', JSON.stringify(budgets)); }catch(e){} pushToCloud(); }
 
@@ -797,6 +956,8 @@ function pushToCloud(){
 }
 
 function openSyncModal(){
+  const pwField = document.getElementById('authPassword');
+  if(pwField) pwField.value = '';
   refreshSyncModalUI(); openModal('syncOverlay');
 }
 
@@ -818,32 +979,46 @@ function doSignUp(){
   const email = document.getElementById('authEmail').value.trim();
   const pw = document.getElementById('authPassword').value;
   if(!email || pw.length<6) return showToast('Enter email & 6+ char password');
-  fbAuth.createUserWithEmailAndPassword(email, pw).then(()=>showToast('Signed in')).catch(e=>showToast(e.message));
+  fbAuth.createUserWithEmailAndPassword(email, pw).then(()=>{
+    document.getElementById('authPassword').value = '';
+    showToast('Signed in');
+  }).catch(e=>showToast(e.message));
 }
 function doSignIn(){
   if(!fbAuth) return showToast('Error: System not ready. Refresh the page.'); // FIX: Error Check
   const email = document.getElementById('authEmail').value.trim();
   const pw = document.getElementById('authPassword').value;
   if(!email || !pw) return showToast('Enter email and password');
-  fbAuth.signInWithEmailAndPassword(email, pw).then(()=>showToast('Signed in')).catch(e=>showToast(e.message));
+  fbAuth.signInWithEmailAndPassword(email, pw).then(()=>{
+    document.getElementById('authPassword').value = '';
+    showToast('Signed in');
+  }).catch(e=>showToast(e.message));
 }
-function doSignOut() {
-  if (fbAuth) {
-    fbAuth.signOut().then(() => {
-      // આ લાઈનોથી બ્રાઉઝરની મેમરીમાંથી બધો ડેટા ડિલીટ થઈ જશે
-      localStorage.removeItem('mh_loans');
-      localStorage.removeItem('mh_transactions');
-      localStorage.removeItem('mh_budgets');
-      localStorage.removeItem('mh_app_pin');
-      
-      showToast('Signed out and data cleared');
-      location.reload(); // પેજ રિફ્રેશ કરો એટલે ડેટા સ્ક્રીન પરથી પણ હટી જશે
-    }).catch(e => showToast('Error signing out: ' + e.message));
-  }
+function doSignOut(){
+  if(!confirm('Sign out? Your data stays safely backed up in the cloud, but will be removed from this device/browser until you sign in again.')) return;
+  if(fbAuth) fbAuth.signOut();
+  if(fbUnsub){ fbUnsub(); fbUnsub = null; }
+  // Security: wipe local copy on logout so it doesn't linger on this device/browser
+  loans = []; txns = []; budgets = {};
+  try{
+    localStorage.removeItem('mh_loans');
+    localStorage.removeItem('mh_transactions');
+    localStorage.removeItem('mh_budgets');
+  }catch(e){}
+  currentPersonView = null; currentLedgerLoanId = null;
+  closeModal('personOverlay'); closeModal('ledgerOverlay');
+  document.getElementById('authEmail').value = '';
+  document.getElementById('authPassword').value = '';
+  renderAll();
+  refreshSyncModalUI();
+  showToast('Signed out — local data cleared from this device');
 }
+window.openSyncModal=openSyncModal; 
+window.doSignUp=doSignUp; window.doSignIn=doSignIn; window.doSignOut=doSignOut;
+
 
 /* ---------------- NAV ---------------- */
-const titles = {dashboard:'Dashboard', loans:'Loans', txns:'Income & Expense', budget:'Budget', reports:'Reports'};
+const titles = {dashboard:'Dashboard', loans:'Loans', txns:'Income & Expense', budget:'Budget', reminders:'Reminders', reports:'Reports', diagnostics:'Diagnostics'};
 function go(view){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.view===view));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -851,6 +1026,7 @@ function go(view){
   document.getElementById('viewTitle').textContent = titles[view];
   if(view==='reports') renderReportCharts();
   if(view==='dashboard') renderDashboardCharts();
+  if(view==='reminders') renderReminders();
 }
 document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click', ()=>go(n.dataset.view)));
 
@@ -894,6 +1070,93 @@ function loanCalc(l){
   const interest = (l.amount||0) * ((l.rate||0)/100) * (days/365);
   return {days, interest, total: (l.amount||0) + interest, hasPayments:false};
 }
+
+/* ---------------- DIAGNOSTICS / SELF-TEST SUITE ---------------- */
+function daysAgoStr(n){ const d = new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
+function parseFmt(text){ return parseFloat((text||'0').replace(/[₹,]/g,'')) || 0; }
+
+function runDiagnostics(){
+  const results = [];
+  const assertClose = (actual, expected, tol, label) => results.push({label, pass: Math.abs(actual-expected) <= tol, actual, expected});
+  const assertEqual = (actual, expected, label) => results.push({label, pass: actual === expected, actual, expected});
+  const assertTrue = (pass, label, detail) => results.push({label, pass, actual: pass?'OK':(detail||'FAIL'), expected:'OK'});
+
+  // --- Math tests (isolated, don't touch real data) ---
+  const c1 = loanCalc({amount:100, rate:12, date:daysAgoStr(365), returnDate:todayStr()});
+  assertClose(c1.interest, 12, 0.5, 'Simple interest: ₹100 @ 12% for 365 days ≈ ₹12');
+
+  const c2 = loanCalc({amount:1000, rate:10, date:daysAgoStr(183), returnDate:todayStr()});
+  assertClose(c2.interest, 50, 2, 'Half-year interest: ₹1000 @ 10% for ~183 days ≈ ₹50');
+
+  const led3 = computeLedger({amount:100, rate:12, date:daysAgoStr(200), returnDate:todayStr(),
+    payments:[{id:'t3', type:'interest', amount:5, date:daysAgoStr(100), mode:'Cash'}]});
+  const expectedAccrued3 = 100*0.12*200/365;
+  assertClose(led3.interestAccrued, expectedAccrued3, 0.05, 'Ledger: interest accrual matches manual calc');
+  assertClose(led3.interestPaid, 5, 0.001, 'Ledger: interest paid tracked correctly');
+  assertClose(led3.outstandingInterest, expectedAccrued3-5, 0.05, 'Ledger: outstanding interest = accrued − paid');
+
+  const led4 = computeLedger({amount:1000, rate:10, date:daysAgoStr(100), returnDate:todayStr(),
+    payments:[{id:'t4', type:'principal', amount:400, date:daysAgoStr(50), mode:'Cash'}]});
+  assertEqual(led4.outstandingPrincipal, 600, 'Ledger: principal repayment reduces outstanding principal (1000−400=600)');
+
+  const c5 = loanCalc({amount:500, rate:0, date:daysAgoStr(100), returnDate:todayStr()});
+  assertEqual(c5.interest, 0, '0% rate loan produces ₹0 interest');
+
+  // --- Live consistency checks: recompute from raw data, compare to what's on screen ---
+  const originalView = document.querySelector('.nav-item.active')?.dataset.view || 'diagnostics';
+  const wasOnDash = originalView === 'dashboard';
+  if(!wasOnDash){ go('dashboard'); }
+  const ym = todayStr().slice(0,7);
+  const incExpected = txns.filter(t=>t.type==='income'&&t.date.slice(0,7)===ym).reduce((s,t)=>s+t.amount,0);
+  assertClose(parseFmt(document.getElementById('dashIncome').textContent), incExpected, 1, "Dashboard This Month's Income matches raw transaction data");
+
+  const expExpected = txns.filter(t=>t.type==='expense'&&t.date.slice(0,7)===ym).reduce((s,t)=>s+t.amount,0);
+  assertClose(parseFmt(document.getElementById('dashExpense').textContent), expExpected, 1, "Dashboard This Month's Expense matches raw transaction data");
+
+  let oweYouExp=0, oweThemExp=0;
+  loans.forEach(l=>{ const c=loanCalc(l); if(l.type==='given') oweYouExp+=c.total; else oweThemExp+=c.total; });
+  assertClose(parseFmt(document.getElementById('dashLoanNet').textContent), Math.abs(oweYouExp-oweThemExp), 1, 'Dashboard "Net Loan Balance" matches raw loan data');
+  if(!wasOnDash){ go(originalView); }
+
+  // --- Data integrity scan on your real entries ---
+  loans.forEach((l,i)=>{
+    assertTrue(l.amount>0, `Loan #${i+1} "${l.name||'(no name)'}" has a valid amount`, `amount=${l.amount}`);
+    assertTrue(!!l.date, `Loan #${i+1} "${l.name||'(no name)'}" has a date`, 'missing date');
+    assertTrue((l.rate||0)>=0, `Loan #${i+1} "${l.name||'(no name)'}" has a non-negative rate`, `rate=${l.rate}`);
+    if(l.returnDate && l.date){
+      assertTrue(new Date(l.returnDate) >= new Date(l.date), `Loan #${i+1} "${l.name||'(no name)'}" return date is not before start date`, `${l.date} → ${l.returnDate}`);
+    }
+  });
+  txns.forEach((t,i)=>{
+    assertTrue(t.amount>0, `Transaction #${i+1} "${t.category||'(no category)'}" has a valid amount`, `amount=${t.amount}`);
+    assertTrue(!!t.date, `Transaction #${i+1} "${t.category||'(no category)'}" has a date`, 'missing date');
+  });
+
+  renderDiagnosticsResults(results);
+}
+
+function renderDiagnosticsResults(results){
+  const passCount = results.filter(r=>r.pass).length;
+  const failCount = results.length - passCount;
+  document.getElementById('diagSummary').innerHTML = `
+    <div class="card"><div class="label gu">Tests Run</div><div class="value num">${results.length}</div></div>
+    <div class="card"><div class="label gu" style="color:var(--green);">Passed</div><div class="value num pos">${passCount}</div></div>
+    <div class="card"><div class="label gu" style="color:var(--red);">Failed</div><div class="value num neg">${failCount}</div></div>
+  `;
+  const tbody = document.getElementById('diagResultsTable');
+  tbody.innerHTML = '';
+  document.getElementById('diagEmpty').style.display = 'none';
+  results.forEach(r=>{
+    const tr = document.createElement('tr');
+    if(!r.pass) tr.style.background = 'rgba(176,67,46,0.08)';
+    tr.innerHTML = `<td>${r.pass?'✅':'❌'}</td><td style="${r.pass?'':'font-weight:600;'}">${r.label}</td>
+      <td class="right num">${typeof r.expected==='number'?fmt(r.expected):r.expected}</td>
+      <td class="right num">${typeof r.actual==='number'?fmt(r.actual):r.actual}</td>`;
+    tbody.appendChild(tr);
+  });
+  showToast(failCount ? `⚠ ${failCount} test(s) failed — check the table` : `✅ All ${passCount} tests passed`);
+}
+window.runDiagnostics = runDiagnostics;
 
 /* ---------------- MODALS ---------------- */
 function closeModal(id){ document.getElementById(id).classList.remove('active'); }
@@ -973,8 +1236,10 @@ const modeLabel = m => ({Cash:'Cash',Cheque:'Cheque',NEFT:'NEFT',UPI:'UPI','Bank
 /* ---------------- RENDERS ---------------- */
 function renderLoans(){
   const tbody = document.getElementById('loansTable'); tbody.innerHTML='';
-  document.getElementById('loansEmpty').style.display = loans.length?'none':'';
-  loans.slice().sort((a,b)=> new Date(b.date)-new Date(a.date)).forEach(l=>{
+  const q = (document.getElementById('loanSearch')?.value || '').trim().toLowerCase();
+  const filtered = loans.filter(l => !q || [l.name, l.mode, l.ref, l.note, l.status].some(v => (v||'').toLowerCase().includes(q)));
+  document.getElementById('loansEmpty').style.display = filtered.length?'none':'';
+  filtered.slice().sort((a,b)=> new Date(b.date)-new Date(a.date)).forEach(l=>{
     const c = loanCalc(l);
     tbody.innerHTML += `<tr>
       <td>${l.name}${c.hasPayments?' <span class="tag tag-partial" style="margin-left:4px;">ledger</span>':''}</td>
@@ -1075,8 +1340,10 @@ window.savePayment=savePayment; window.deletePayment=deletePayment;
 
 function renderTxns(){
   const tbody = document.getElementById('txnsTable'); tbody.innerHTML='';
-  document.getElementById('txnsEmpty').style.display = txns.length?'none':'';
-  txns.slice().sort((a,b)=> new Date(b.date)-new Date(a.date)).forEach(t=>{
+  const q = (document.getElementById('txnSearch')?.value || '').trim().toLowerCase();
+  const filtered = txns.filter(t => !q || [t.category, t.note].some(v => (v||'').toLowerCase().includes(q)));
+  document.getElementById('txnsEmpty').style.display = filtered.length?'none':'';
+  filtered.slice().sort((a,b)=> new Date(b.date)-new Date(a.date)).forEach(t=>{
     tbody.innerHTML += `<tr><td class="num">${t.date}</td><td><span class="tag tag-${t.type}">${t.type}</span></td>
       <td>${t.category}</td><td class="right num" style="font-weight:600;color:${t.type==='income'?'var(--green)':'var(--red)'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</td>
       <td style="color:var(--ink-soft);font-size:12.5px;">${t.note||''}</td>
@@ -1112,6 +1379,8 @@ function renderDashboard(){
     tbody.innerHTML += `<tr><td class="num">${t.date}</td><td>${t.category}</td><td class="right num" style="color:${t.type==='income'?'var(--green)':'var(--red)'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</td></tr>`;
   });
   if(!txns.length) tbody.innerHTML = '<tr><td colspan="3" class="empty gu">No transactions yet</td></tr>';
+  const dashView = document.getElementById('view-dashboard');
+  if(dashView && dashView.classList.contains('active')) renderDashboardCharts();
 }
 
 function destroyChart(key){ if(chartInstances[key]){ chartInstances[key].destroy(); delete chartInstances[key]; } }
@@ -1157,8 +1426,9 @@ function importData(evt){
 window.exportData=exportData; window.importData=importData;
 
 /* INIT */
-function renderAll(){ renderLoans(); renderTxns(); renderBudget(); renderDashboard(); renderDashboardCharts(); }
+function renderAll(){ renderLoans(); renderTxns(); renderBudget(); renderDashboard(); renderDashboardCharts(); checkReminderBadgeOnLoad(); }
 document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN', {year:'numeric',month:'long',day:'numeric'});
+applyTheme(localStorage.getItem('mh_theme') || 'light');
 loadAll();
 checkLock(); // APP LOCK CHECK ON LOAD
 </script>
