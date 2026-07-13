@@ -403,6 +403,7 @@
                 <h3 style="margin-bottom:16px;">App Settings & Tools</h3>
                 <div class="setting-item" onclick="go('budget')"><span class="ico">▤</span><span>Set Monthly Budgets</span></div>
                 <div class="setting-item" onclick="go('calculators')"><span class="ico">🧮</span><span>Financial Calculators</span></div>
+                <div class="setting-item" onclick="openModal('diagnosticsOverlay')"><span class="ico">🧪</span><span>System Diagnostics</span></div>
                 <div class="setting-item" onclick="toggleTheme()"><span class="ico" id="themeIco">🌙</span><span id="themeText">Dark Mode</span></div>
                 <div class="setting-item" onclick="togglePinSetup()"><span class="ico" id="pinIco">🔒</span><span id="pinText">Set PIN Lock</span></div>
             </div>
@@ -588,6 +589,19 @@
       <h3 style="color:var(--accent); margin-bottom:12px; font-size:15px;">📅 Due within 7 Days</h3>
       <div class="table-wrapper"><table><thead><tr><th>Name</th><th class="right">Amount</th><th class="right">Days Left</th></tr></thead><tbody id="dueSoonTable"></tbody></table></div>
     </div>
+  </div>
+</div>
+
+<div class="overlay" id="diagnosticsOverlay" onclick="if(event.target===this) closeModal('diagnosticsOverlay')">
+  <div class="modal" style="max-width: 620px;">
+    <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><h3>System Diagnostics</h3><button class="icon-btn" onclick="closeModal('diagnosticsOverlay')">✕</button></div>
+    <p style="color:var(--text-secondary); font-size:13px; margin-bottom:16px;">Runs built-in checks on the interest/ledger math and confirms Dashboard numbers actually match your raw data.</p>
+    <button class="btn" onclick="runDiagnostics()" style="margin-bottom:16px;">▶ Run All Tests</button>
+    <div id="diagSummary" style="display:flex; gap:10px; margin-bottom:16px;"></div>
+    <div class="table-wrapper" style="max-height:340px; overflow-y:auto;">
+      <table><thead><tr><th style="width:30px;"></th><th>Check</th><th class="right">Expected</th><th class="right">Actual</th></tr></thead><tbody id="diagResultsTable"></tbody></table>
+    </div>
+    <div class="empty" id="diagEmpty" style="padding:20px;">Press "Run All Tests" to check everything.</div>
   </div>
 </div>
 
@@ -857,6 +871,55 @@ function setPaymentType(type){
   document.getElementById('paymentType').value = type;
   document.querySelectorAll('#ledgerOverlay .seg button').forEach(b=> b.classList.toggle('on', b.dataset.val===type));
 }
+function daysAgoStr(n){ const d = new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
+function runDiagnostics(){
+  const results = [];
+  const assertClose = (actual, expected, tol, label) => results.push({label, pass: Math.abs(actual-expected) <= tol, actual, expected});
+  const assertEqual = (actual, expected, label) => results.push({label, pass: actual === expected, actual, expected});
+  const assertTrue = (pass, label, detail) => results.push({label, pass, actual: pass?'OK':(detail||'FAIL'), expected:'OK'});
+
+  const c1 = computeLedger({amount:100, rate:12, date:daysAgoStr(365), returnDate:todayStr()});
+  assertClose(c1.interest, 12, 0.5, 'Simple interest: ₹100 @ 12% for 365 days ≈ ₹12');
+
+  const c2 = computeLedger({amount:1000, rate:10, date:daysAgoStr(183), returnDate:todayStr()});
+  assertClose(c2.interest, 50, 2, 'Half-year interest: ₹1000 @ 10% for ~183 days ≈ ₹50');
+
+  const c3 = computeLedger({amount:1000, rate:10, date:daysAgoStr(100), returnDate:todayStr(),
+    payments:[{id:'t3', type:'principal', amount:400, date:daysAgoStr(50)}]});
+  assertEqual(c3.outstandingPrincipal, 600, 'Ledger: principal repayment reduces outstanding (1000−400=600)');
+
+  loans.forEach((l,i)=>{
+    assertTrue(l.amount>0, `Loan #${i+1} "${l.name||'(no name)'}" has a valid amount`, `amount=${l.amount}`);
+    assertTrue(!!l.date, `Loan #${i+1} "${l.name||'(no name)'}" has a date`, 'missing date');
+    assertTrue((l.rate||0)>=0, `Loan #${i+1} "${l.name||'(no name)'}" has a non-negative rate`, `rate=${l.rate}`);
+  });
+  txns.forEach((t,i)=>{
+    assertTrue(t.amount>0, `Transaction #${i+1} "${t.category||t.type}" has a valid amount`, `amount=${t.amount}`);
+    assertTrue(!!t.date, `Transaction #${i+1} "${t.category||t.type}" has a date`, 'missing date');
+  });
+
+  const domIncome = parseFmt(document.getElementById('dashIncome').textContent);
+  const ym = todayStr().slice(0,7);
+  const expIncome = txns.filter(t=>t.type==='income'&&isDateInFilter(t.date)).reduce((s,t)=>s+t.amount,0);
+  assertClose(domIncome, expIncome, 1, 'Dashboard "Filtered Income" matches raw transaction data');
+
+  renderDiagnosticsResults(results);
+}
+function renderDiagnosticsResults(results){
+  const passCount = results.filter(r=>r.pass).length, failCount = results.length - passCount;
+  document.getElementById('diagSummary').innerHTML = `
+    <div class="card" style="flex:1;padding:12px;"><div class="label">Run</div><div class="value num">${results.length}</div></div>
+    <div class="card" style="flex:1;padding:12px;"><div class="label" style="color:var(--green);">Passed</div><div class="value num pos">${passCount}</div></div>
+    <div class="card" style="flex:1;padding:12px;"><div class="label" style="color:var(--red);">Failed</div><div class="value num neg">${failCount}</div></div>`;
+  const tb = document.getElementById('diagResultsTable'); tb.innerHTML='';
+  document.getElementById('diagEmpty').style.display = 'none';
+  results.forEach(r=>{
+    tb.innerHTML += `<tr style="${r.pass?'':'background:rgba(201,42,42,0.08);'}"><td>${r.pass?'✅':'❌'}</td><td style="${r.pass?'':'font-weight:600;'}">${r.label}</td>
+      <td class="right num">${typeof r.expected==='number'?fmt(r.expected):r.expected}</td>
+      <td class="right num">${typeof r.actual==='number'?fmt(r.actual):r.actual}</td></tr>`;
+  });
+  showToast(failCount ? `⚠ ${failCount} test(s) failed` : `✅ All ${passCount} tests passed`);
+}
 function getDueLists(){
   const today = todayStr();
   const overdue = [], dueSoon = [];
@@ -879,10 +942,25 @@ function sendWhatsAppReminder(id){
   window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
 }
 function openLoanModal(id){ document.getElementById('loanId').value = id||''; if(id){ const l = loans.find(x=>x.id===id); ['Name','Amount','Rate','Date','ReturnDate'].forEach(k=> document.getElementById('loan'+k).value=l[k.toLowerCase()]); setLoanType(l.type); } else { ['Name','Amount','Rate'].forEach(k=> document.getElementById('loan'+k).value=''); setLoanType('given'); document.getElementById('loanDate').value=todayStr(); document.getElementById('loanReturnDate').value=todayStr(); } openModal('loanOverlay'); }
-function saveLoan(){ const id=document.getElementById('loanId').value||uid(); const obj = {id, name:document.getElementById('loanName').value, type:document.getElementById('loanType').value, amount:parseFloat(document.getElementById('loanAmount').value), rate:parseFloat(document.getElementById('loanRate').value), date:document.getElementById('loanDate').value, returnDate:document.getElementById('loanReturnDate').value, status:'Pending'}; loans = loans.filter(x=>x.id!==id); loans.push(obj); saveAll(); closeModal('loanOverlay'); showToast('Loan saved'); }
+function saveLoan(){
+  const name = document.getElementById('loanName').value.trim();
+  const amount = parseFloat(document.getElementById('loanAmount').value);
+  if(!name) return showToast('Enter a name');
+  if(!amount || amount<=0) return showToast('Enter a valid amount');
+  const id=document.getElementById('loanId').value||uid();
+  const existing = loans.find(x=>x.id===id);
+  const obj = {id, name, type:document.getElementById('loanType').value, amount, rate:parseFloat(document.getElementById('loanRate').value)||0, date:document.getElementById('loanDate').value||todayStr(), returnDate:document.getElementById('loanReturnDate').value||todayStr(), status: existing ? existing.status : 'Pending', payments: existing ? existing.payments : []};
+  loans = loans.filter(x=>x.id!==id); loans.push(obj); saveAll(); closeModal('loanOverlay'); showToast('Loan saved');
+}
 function deleteLoan(id){ if(confirm('Delete record?')){ loans=loans.filter(x=>x.id!==id); saveAll(); } }
 
-function saveBudget(){ budgets[document.getElementById('budgetCategory').value] = parseFloat(document.getElementById('budgetAmount').value); saveAll(); closeModal('budgetOverlay'); }
+function saveBudget(){
+  const cat = document.getElementById('budgetCategory').value.trim();
+  const amt = parseFloat(document.getElementById('budgetAmount').value);
+  if(!cat) return showToast('Enter a category');
+  if(!amt || amt<=0) return showToast('Enter a valid amount');
+  budgets[cat] = amt; saveAll(); closeModal('budgetOverlay'); showToast('Budget saved');
+}
 function deleteBudget(c){ delete budgets[c]; saveAll(); }
 
 function openLedgerModal(id){ currentLedgerLoanId = id; const l = loans.find(x=>x.id===id); if(!l) return; document.getElementById('ledgerTitle').textContent = `Manage: ${l.name}`; const btn = document.getElementById('paymentTypeInterestBtn'); if(btn) btn.textContent = l.type==='given' ? 'Interest Received' : 'Interest Paid'; document.getElementById('paymentAmount').value=''; document.getElementById('paymentDate').value=todayStr(); setPaymentType('interest'); renderLedger(); openModal('ledgerOverlay'); }
