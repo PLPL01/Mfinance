@@ -6,6 +6,7 @@
 <title>My Ledger — Premium Edition</title>
 <!-- Secure Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -208,6 +209,40 @@
         <div class="card"><div class="label">Net Savings <span class="ico">◆</span></div><div class="value num" id="dashSavings">₹0</div></div>
         <div class="card"><div class="label"><span id="dashLoanNetSub">Loan Net</span> <span class="ico">₹</span></div><div class="value num" id="dashLoanNet">₹0</div></div>
       </div>
+
+      <div class="cards" style="grid-template-columns:repeat(4,1fr);">
+        <div class="card"><div class="label">Total Given (Outstanding)</div><div class="value num pos" id="dashGivenOut" style="font-size:18px;">₹0</div></div>
+        <div class="card"><div class="label">Total Taken (Outstanding)</div><div class="value num neg" id="dashTakenOut" style="font-size:18px;">₹0</div></div>
+        <div class="card" style="cursor:pointer;" onclick="go('reminders')"><div class="label">⚠ Overdue Loans</div><div class="value num" id="dashOverdueCount" style="font-size:18px;">0</div></div>
+        <div class="card"><div class="label">Budget Used (This Month)</div><div class="value num" id="dashBudgetPct" style="font-size:18px;">-</div></div>
+      </div>
+
+      <div class="grid-2" style="display:grid;grid-template-columns:1.3fr 1fr;gap:18px;margin-bottom:20px;">
+        <div class="panel">
+          <h3 style="margin-bottom:14px;font-size:15px;">Last 6 Months — Income vs Expense</h3>
+          <canvas id="chartMonthly" height="180"></canvas>
+        </div>
+        <div class="panel">
+          <h3 style="margin-bottom:14px;font-size:15px;">This Month's Expense — By Category</h3>
+          <canvas id="chartCategory" height="180"></canvas>
+        </div>
+      </div>
+
+      <div class="grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px;">
+        <div class="panel">
+          <div class="panel-head">
+            <h3 class="gu">Top People — Owe You Most</h3>
+          </div>
+          <table><tbody id="dashTopGivenTable"></tbody></table>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h3 class="gu">Top People — You Owe Most</h3>
+          </div>
+          <table><tbody id="dashTopTakenTable"></tbody></table>
+        </div>
+      </div>
+
       <div class="panel">
         <div class="panel-head">
           <h3 class="gu">Recent Transactions</h3>
@@ -574,6 +609,7 @@ function go(view){
   document.getElementById('viewTitle').textContent = titles[view] || 'My Ledger';
   if(view==='reminders') renderReminders();
   if(view==='profile') renderProfile();
+  if(view==='dashboard') renderDashboardCharts();
   if(view==='calculators') { 
       resetCalcHub(); 
       calcSIP(); calcEMI(); calcGST(); calcSI(); calcPct(); calcMileage(); 
@@ -648,7 +684,7 @@ function renderLoans(){
           </div>
         </div>
       </td>
-      <td><span class="tag ${l.type==='given'?'tag-given':'tag-taken'}">${l.type}</span></td>
+      <td><span class="tag ${l.type==='given'?'tag-given':'tag-taken'}">${l.type==='given'?'Given':'Taken'}</span></td>
       <td class="right num">${fmt(l.amount)}</td><td class="num" style="color:var(--text-secondary);">${l.date}</td>
       <td class="right"><div class="num">${fmt(c.interest)}</div><div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">${l.type==='given'?'Received':'Paid'}: <span class="num">${fmt(c.interestPaid)}</span></div></td>
       <td class="right num" style="font-weight:700;">${fmt(c.total)}</td>
@@ -702,7 +738,7 @@ function openPersonDetail(name){
   mine.forEach(l=>{
     const c = computeLedger(l);
     tbody.innerHTML += `<tr style="cursor:pointer;" onclick="if(!event.target.closest('button')) { closeModal('personOverlay'); openLedgerModal('${l.id}'); }">
-      <td><span class="tag ${l.type==='given'?'tag-given':'tag-taken'}">${l.type}</span></td>
+      <td><span class="tag ${l.type==='given'?'tag-given':'tag-taken'}">${l.type==='given'?'Given':'Taken'}</span></td>
       <td class="right num">${fmt(l.amount)}</td>
       <td class="num">${l.date}</td>
       <td class="right num" style="font-weight:600;">${fmt(c.total)}</td>
@@ -717,7 +753,9 @@ function addEntryForPerson(){ const name=currentPersonView; closeModal('personOv
 function sendWhatsAppReminder(id) {
   const l = loans.find(x=>x.id===id); if(!l) return;
   const c = computeLedger(l);
-  const msg = `નમસ્તે ${l.name}, આ એક મિત્રતાપૂર્ણ રીમાઇન્ડર છે. આપણી લેજર વિગત મુજબ: મૂડી: ${fmt(l.amount)}, બાકી વ્યાજ: ${fmt(c.interest)}. કુલ બાકી બેલેન્સ: ${fmt(c.total)}. કૃપા કરીને જલદીથી હિસાબ ક્લિયર કરવા વિનંતી. આભાર!`;
+  const msg = l.type==='given'
+    ? `નમસ્તે ${l.name}, આ એક મિત્રતાપૂર્ણ રીમાઇન્ડર છે. આપણી લેજર વિગત મુજબ: મૂડી: ${fmt(l.amount)}, બાકી વ્યાજ (તમારે આપવાનું): ${fmt(c.interest)}. કુલ બાકી બેલેન્સ: ${fmt(c.total)}. કૃપા કરીને જલદીથી હિસાબ ક્લિયર કરવા વિનંતી. આભાર!`
+    : `નમસ્તે ${l.name}, આ એક update છે. આપણી લેજર વિગત મુજબ, મારે તમને ચૂકવવાનું: મૂડી: ${fmt(l.amount)}, બાકી વ્યાજ (મારે ચૂકવવાનું): ${fmt(c.interest)}. કુલ બાકી: ${fmt(c.total)}. જલદી ક્લિયર કરીશ. આભાર!`;
   window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
@@ -755,6 +793,80 @@ function renderDashboard(){
   const tbody = document.getElementById('dashRecentTable'); tbody.innerHTML='';
   txns.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5).forEach(t=>{ tbody.innerHTML += `<tr><td class="num">${t.date}</td><td>${t.category}</td><td class="right num ${t.type==='income'?'pos':'neg'}" style="font-weight:600;">${t.type==='income'?'+':'-'}${fmt(t.amount)}</td></tr>`; });
   if(!txns.length) tbody.innerHTML = '<tr><td colspan="3" class="empty">No transactions logged yet.</td></tr>';
+
+  // Row 2: Given/Taken outstanding, overdue count, budget %
+  let givenOut=0, takenOut=0;
+  const perPersonGiven = {}, perPersonTaken = {};
+  loans.forEach(l=>{
+    const c = computeLedger(l);
+    if(l.type==='given'){ givenOut += c.total; perPersonGiven[l.name] = (perPersonGiven[l.name]||0) + c.total; }
+    else{ takenOut += c.total; perPersonTaken[l.name] = (perPersonTaken[l.name]||0) + c.total; }
+  });
+  document.getElementById('dashGivenOut').textContent = fmt(givenOut);
+  document.getElementById('dashTakenOut').textContent = fmt(takenOut);
+
+  const dueInfo = (typeof getDueLists==='function') ? getDueLists() : {overdue:[]};
+  document.getElementById('dashOverdueCount').textContent = dueInfo.overdue.length;
+
+  const budgetCats = Object.keys(budgets);
+  if(budgetCats.length){
+    const totalBudget = budgetCats.reduce((s,c)=>s+budgets[c],0);
+    const totalSpent = budgetCats.reduce((s,c)=> s + txns.filter(t=>t.type==='expense'&&t.category===c&&t.date.slice(0,7)===ym).reduce((a,t)=>a+t.amount,0), 0);
+    document.getElementById('dashBudgetPct').textContent = totalBudget ? Math.round((totalSpent/totalBudget)*100)+'%' : '-';
+  } else {
+    document.getElementById('dashBudgetPct').textContent = '-';
+  }
+
+  const topGivenTb = document.getElementById('dashTopGivenTable'); topGivenTb.innerHTML='';
+  const topGiven = Object.entries(perPersonGiven).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  if(!topGiven.length) topGivenTb.innerHTML = '<tr><td class="empty">No outstanding given loans.</td></tr>';
+  topGiven.forEach(([name,amt])=>{ topGivenTb.innerHTML += `<tr><td>${name}</td><td class="right num pos" style="font-weight:600;">${fmt(amt)}</td></tr>`; });
+
+  const topTakenTb = document.getElementById('dashTopTakenTable'); topTakenTb.innerHTML='';
+  const topTaken = Object.entries(perPersonTaken).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  if(!topTaken.length) topTakenTb.innerHTML = '<tr><td class="empty">No outstanding taken loans.</td></tr>';
+  topTaken.forEach(([name,amt])=>{ topTakenTb.innerHTML += `<tr><td>${name}</td><td class="right num neg" style="font-weight:600;">${fmt(amt)}</td></tr>`; });
+
+  renderDashboardCharts();
+}
+
+let dashChartMonthly=null, dashChartCategory=null;
+function renderDashboardCharts(){
+  if(typeof Chart === 'undefined') return;
+  const canvasM = document.getElementById('chartMonthly'), canvasC = document.getElementById('chartCategory');
+  if(!canvasM || !canvasC) return;
+
+  // Last 6 months income vs expense
+  const months = [];
+  const now = new Date();
+  for(let i=5;i>=0;i--){ const d = new Date(now.getFullYear(), now.getMonth()-i, 1); months.push(d.toISOString().slice(0,7)); }
+  const monthLabels = months.map(m=>{ const [y,mo]=m.split('-'); return new Date(y,mo-1,1).toLocaleDateString('en-IN',{month:'short'}); });
+  const incData = months.map(m=> txns.filter(t=>t.type==='income'&&t.date.slice(0,7)===m).reduce((s,t)=>s+t.amount,0));
+  const expData = months.map(m=> txns.filter(t=>t.type==='expense'&&t.date.slice(0,7)===m).reduce((s,t)=>s+t.amount,0));
+
+  if(dashChartMonthly) dashChartMonthly.destroy();
+  dashChartMonthly = new Chart(canvasM, {
+    type:'bar',
+    data:{ labels:monthLabels, datasets:[
+      {label:'Income', data:incData, backgroundColor:'#2E7D4F', borderRadius:5},
+      {label:'Expense', data:expData, backgroundColor:'#B0432E', borderRadius:5}
+    ]},
+    options:{responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true}}}
+  });
+
+  // This month's expense by category
+  const ym = todayStr().slice(0,7);
+  const catMap = {};
+  txns.filter(t=>t.type==='expense'&&t.date.slice(0,7)===ym).forEach(t=> catMap[t.category]=(catMap[t.category]||0)+t.amount);
+  const cats = Object.keys(catMap);
+  if(dashChartCategory) dashChartCategory.destroy();
+  dashChartCategory = new Chart(canvasC, {
+    type:'doughnut',
+    data:{ labels: cats.length?cats:['No data'],
+      datasets:[{ data: cats.length?cats.map(c=>catMap[c]):[1],
+        backgroundColor:['#0F5257','#C08A2E','#B0432E','#3B4E9E','#8A5A00','#5B6660','#2E7D4F','#A8791F'] }]},
+    options:{responsive:true, plugins:{legend:{position:'bottom', labels:{boxWidth:12}}}}
+  });
 }
 
 function renderBudget(){
@@ -917,10 +1029,10 @@ function getDueLists(){
 function renderReminders(){
   const {overdue, dueSoon} = getDueLists(); const ot = document.getElementById('overdueTable'); ot.innerHTML='';
   if(!overdue.length) ot.innerHTML='<tr><td colspan="6" class="empty">Zero clear overdue accounts</td></tr>';
-  overdue.forEach(({l,daysOver})=>{ ot.innerHTML += `<tr><td style="font-weight:600;">${l.name}</td><td><span class="tag">${l.type}</span></td><td class="right num">${fmt(l.amount)}</td><td class="num">${l.returnDate||l.date}</td><td class="right num" style="color:var(--red);font-weight:700;">${daysOver}d</td><td><button class="icon-btn" onclick="openLoanModal('${l.id}')">✎</button></td></tr>`; });
+  overdue.forEach(({l,daysOver})=>{ ot.innerHTML += `<tr><td style="font-weight:600;">${l.name}</td><td><span class="tag ${l.type==='given'?'tag-given':'tag-taken'}">${l.type==='given'?'Given':'Taken'}</span></td><td class="right num">${fmt(l.amount)}</td><td class="num">${l.returnDate||l.date}</td><td class="right num" style="color:var(--red);font-weight:700;">${daysOver}d</td><td><button class="icon-btn" onclick="openLoanModal('${l.id}')">✎</button></td></tr>`; });
   const dt = document.getElementById('dueSoonTable'); dt.innerHTML='';
   if(!dueSoon.length) dt.innerHTML='<tr><td colspan="6" class="empty">Zero near-term deadlines.</td></tr>';
-  dueSoon.forEach(({l,daysLeft})=>{ dt.innerHTML += `<tr><td style="font-weight:600;">${l.name}</td><td><span class="tag">${l.type}</span></td><td class="right num">${fmt(l.amount)}</td><td class="num">${l.returnDate||l.date}</td><td class="right num" style="color:var(--accent);font-weight:700;">${daysLeft===0?'Today':daysLeft+'d'}</td><td><button class="icon-btn" onclick="openLoanModal('${l.id}')">✎</button></td></tr>`; });
+  dueSoon.forEach(({l,daysLeft})=>{ dt.innerHTML += `<tr><td style="font-weight:600;">${l.name}</td><td><span class="tag ${l.type==='given'?'tag-given':'tag-taken'}">${l.type==='given'?'Given':'Taken'}</span></td><td class="right num">${fmt(l.amount)}</td><td class="num">${l.returnDate||l.date}</td><td class="right num" style="color:var(--accent);font-weight:700;">${daysLeft===0?'Today':daysLeft+'d'}</td><td><button class="icon-btn" onclick="openLoanModal('${l.id}')">✎</button></td></tr>`; });
 }
 function updateReminderBadge(){
   const {overdue, dueSoon} = getDueLists(); const total = overdue.length + dueSoon.length;
