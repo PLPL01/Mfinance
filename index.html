@@ -32,7 +32,6 @@
   h1, h2, h3 { font-family: 'Outfit', sans-serif; font-weight: 600; letter-spacing: -0.02em; }
   .num { font-family: 'JetBrains Mono', monospace; letter-spacing: -0.03em; }
 
-  /* CRITICAL MOBILE FIXES */
   .app { display: flex; height: 100dvh; min-height: 100vh; overflow: hidden; background: var(--bg); width: 100vw; }
   button, .btn, .icon-btn, .nav-item, .mobile-nav-item, .card, tr, .setting-item, .subnav button { touch-action: manipulation; user-select: none; }
   .content, .modal { -webkit-overflow-scrolling: touch; }
@@ -71,7 +70,6 @@
   .bank-card .label, .bank-card .value { color: #fff !important; }
   .bank-card::after { content: ''; position: absolute; top: -50%; right: -50%; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%; z-index: 1; pointer-events: none;}
   
-  /* HDFC STYLE ACTIONS */
   .quick-actions { display: flex; gap: 12px; margin-bottom: 24px; width: 100%; }
   .quick-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 10px; color: var(--text-primary); font-weight: 600; font-size: 13px; cursor: pointer; transition: 0.2s; box-shadow: var(--shadow-soft); }
   .quick-btn:hover { border-color: var(--accent); transform: translateY(-2px); }
@@ -372,15 +370,13 @@
       </div>
     </section>
 
-    <!-- PROFILE & TOOLS VIEW (BLANK SCREEN FIX APPLIED) -->
+    <!-- PROFILE & TOOLS VIEW -->
     <section class="view" id="view-profile">
-      
-      <!-- By default, showing signed out so it NEVER blanks out -->
       <div id="profileSignedOut">
         <div class="panel" style="text-align:center; padding:40px 20px;">
           <div style="font-size:48px; margin-bottom:16px;">☁️</div>
           <h3 style="margin-bottom:10px;">Cloud Sync & Account</h3>
-          <p style="color:var(--text-secondary); font-size:14px; max-width:400px; margin:0 auto 24px;">Sign in to securely sync your data across devices. Brave Browser users: Ensure your Shields are not blocking this.</p>
+          <p style="color:var(--text-secondary); font-size:14px; max-width:400px; margin:0 auto 24px;">Sign in to securely sync your data across devices.</p>
           <button class="btn" onclick="openModal('syncOverlay')">⚙️ Setup Sync / Login</button>
         </div>
       </div>
@@ -415,7 +411,6 @@
             </div>
         </div>
       </div>
-
     </section>
   </main>
 </div>
@@ -427,17 +422,10 @@
         <h3 style="margin:0;">Cloud Sync & Login</h3>
         <button class="icon-btn" onclick="closeModal('syncOverlay')">✕</button>
     </div>
-    <p style="color:var(--text-secondary); font-size:13px; margin-bottom:20px;">Securely backup your financial data. <b>Note for Brave users:</b> Disable Shields if login fails.</p>
-    
+    <p style="color:var(--text-secondary); font-size:13px; margin-bottom:20px;">Securely backup your financial data.</p>
     <div id="syncStep2">
-      <div class="field">
-        <label>Email Address</label>
-        <input type="email" id="authEmail" placeholder="your@email.com">
-      </div>
-      <div class="field">
-        <label>Password</label>
-        <input type="password" id="authPassword" placeholder="Minimum 6 characters">
-      </div>
+      <div class="field"><label>Email Address</label><input type="email" id="authEmail" placeholder="your@email.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="authPassword" placeholder="Minimum 6 characters"></div>
       <div class="modal-actions" style="justify-content:flex-end; gap:10px;">
           <button type="button" class="btn btn-ghost" id="btnSignUp" onclick="doSignUp()">Create Acct</button>
           <button type="button" class="btn" id="btnSignIn" onclick="doSignIn()">Sign In</button>
@@ -872,54 +860,7 @@ function setPaymentType(type){
   document.querySelectorAll('#ledgerOverlay .seg button').forEach(b=> b.classList.toggle('on', b.dataset.val===type));
 }
 function daysAgoStr(n){ const d = new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
-function runDiagnostics(){
-  const results = [];
-  const assertClose = (actual, expected, tol, label) => results.push({label, pass: Math.abs(actual-expected) <= tol, actual, expected});
-  const assertEqual = (actual, expected, label) => results.push({label, pass: actual === expected, actual, expected});
-  const assertTrue = (pass, label, detail) => results.push({label, pass, actual: pass?'OK':(detail||'FAIL'), expected:'OK'});
 
-  const c1 = computeLedger({amount:100, rate:12, date:daysAgoStr(365), returnDate:todayStr()});
-  assertClose(c1.interest, 12, 0.5, 'Simple interest: ₹100 @ 12% for 365 days ≈ ₹12');
-
-  const c2 = computeLedger({amount:1000, rate:10, date:daysAgoStr(183), returnDate:todayStr()});
-  assertClose(c2.interest, 50, 2, 'Half-year interest: ₹1000 @ 10% for ~183 days ≈ ₹50');
-
-  const c3 = computeLedger({amount:1000, rate:10, date:daysAgoStr(100), returnDate:todayStr(),
-    payments:[{id:'t3', type:'principal', amount:400, date:daysAgoStr(50)}]});
-  assertEqual(c3.outstandingPrincipal, 600, 'Ledger: principal repayment reduces outstanding (1000−400=600)');
-
-  loans.forEach((l,i)=>{
-    assertTrue(l.amount>0, `Loan #${i+1} "${l.name||'(no name)'}" has a valid amount`, `amount=${l.amount}`);
-    assertTrue(!!l.date, `Loan #${i+1} "${l.name||'(no name)'}" has a date`, 'missing date');
-    assertTrue((l.rate||0)>=0, `Loan #${i+1} "${l.name||'(no name)'}" has a non-negative rate`, `rate=${l.rate}`);
-  });
-  txns.forEach((t,i)=>{
-    assertTrue(t.amount>0, `Transaction #${i+1} "${t.category||t.type}" has a valid amount`, `amount=${t.amount}`);
-    assertTrue(!!t.date, `Transaction #${i+1} "${t.category||t.type}" has a date`, 'missing date');
-  });
-
-  const domIncome = parseFmt(document.getElementById('dashIncome').textContent);
-  const ym = todayStr().slice(0,7);
-  const expIncome = txns.filter(t=>t.type==='income'&&isDateInFilter(t.date)).reduce((s,t)=>s+t.amount,0);
-  assertClose(domIncome, expIncome, 1, 'Dashboard "Filtered Income" matches raw transaction data');
-
-  renderDiagnosticsResults(results);
-}
-function renderDiagnosticsResults(results){
-  const passCount = results.filter(r=>r.pass).length, failCount = results.length - passCount;
-  document.getElementById('diagSummary').innerHTML = `
-    <div class="card" style="flex:1;padding:12px;"><div class="label">Run</div><div class="value num">${results.length}</div></div>
-    <div class="card" style="flex:1;padding:12px;"><div class="label" style="color:var(--green);">Passed</div><div class="value num pos">${passCount}</div></div>
-    <div class="card" style="flex:1;padding:12px;"><div class="label" style="color:var(--red);">Failed</div><div class="value num neg">${failCount}</div></div>`;
-  const tb = document.getElementById('diagResultsTable'); tb.innerHTML='';
-  document.getElementById('diagEmpty').style.display = 'none';
-  results.forEach(r=>{
-    tb.innerHTML += `<tr style="${r.pass?'':'background:rgba(201,42,42,0.08);'}"><td>${r.pass?'✅':'❌'}</td><td style="${r.pass?'':'font-weight:600;'}">${r.label}</td>
-      <td class="right num">${typeof r.expected==='number'?fmt(r.expected):r.expected}</td>
-      <td class="right num">${typeof r.actual==='number'?fmt(r.actual):r.actual}</td></tr>`;
-  });
-  showToast(failCount ? `⚠ ${failCount} test(s) failed` : `✅ All ${passCount} tests passed`);
-}
 function getDueLists(){
   const today = todayStr();
   const overdue = [], dueSoon = [];
@@ -977,24 +918,32 @@ function switchLoanTab(tab) { document.getElementById('btn-tab-entries').classLi
 function updateReminderBadge(){ const dueInfo = getDueLists(); const total = dueInfo.overdue.length + dueInfo.dueSoon.length; const topBadge = document.getElementById('badgeTop'); const botBadge = document.getElementById('badgeBottom'); if(topBadge) { topBadge.style.display = total ? 'inline-block' : 'none'; topBadge.textContent = total; } if(botBadge) { botBadge.style.display = total ? 'inline-block' : 'none'; botBadge.textContent = total; } }
 function renderReminders(){ const {overdue, dueSoon} = getDueLists(); const ot = document.getElementById('overdueTable'); ot.innerHTML=''; if(!overdue.length) ot.innerHTML='<tr><td colspan="3" class="empty">Zero clear overdue accounts</td></tr>'; overdue.forEach(({l,daysOver})=>{ ot.innerHTML += `<tr><td><div style="font-weight:600;">${l.name}</div></td><td class="right num">${fmt(l.amount)}</td><td class="right num" style="color:var(--red);font-weight:700;">${daysOver}d</td></tr>`; }); const dt = document.getElementById('dueSoonTable'); dt.innerHTML=''; if(!dueSoon.length) dt.innerHTML='<tr><td colspan="3" class="empty">Zero near-term deadlines.</td></tr>'; dueSoon.forEach(({l,daysLeft})=>{ dt.innerHTML += `<tr><td><div style="font-weight:600;">${l.name}</div></td><td class="right num">${fmt(l.amount)}</td><td class="right num" style="color:var(--accent);font-weight:700;">${daysLeft===0?'Today':daysLeft+'d'}</td></tr>`; }); }
 
-// ---------------- CLOUD CORE (BRAVE BYPASS FIX) ----------------
+// ---------------- CLOUD CORE (REFRESH LOGOUT BUG FIX) ----------------
 function initFirebase(){
   try {
-    if(typeof firebase === 'undefined') return;
+    if(typeof firebase === 'undefined') { console.error('Firebase SDK not loaded'); return; }
     const cfg = { apiKey: "AIzaSyA3037mG-4lYelAYyJOOBlH2HMphZv3zuw", authDomain: "m-finance1.firebaseapp.com", projectId: "m-finance1" };
     if(!firebase.apps.length) fbApp = firebase.initializeApp(cfg); else fbApp = firebase.app();
     fbAuth = firebase.auth(); fbDb = firebase.firestore();
-    
-    // 1. Always bind state listener immediately
-    fbAuth.onAuthStateChanged(u=>{ 
-        fbUser=u; 
-        if(u) { listenToCloud(u.uid); } 
-        renderProfile(); // Always call this to remove blank screen
+
+    // CRITICAL BUG FIX: setPersistence MUST complete BEFORE attaching onAuthStateChanged
+    fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+    .then(() => {
+        fbAuth.onAuthStateChanged(u => {
+            fbUser = u;
+            if(u) { listenToCloud(u.uid); }
+            renderProfile();
+        });
+    })
+    .catch(e => {
+        console.warn("Persistence error:", e);
+        // Fallback if local storage is blocked by Brave Shield
+        fbAuth.onAuthStateChanged(u => {
+            fbUser = u;
+            if(u) { listenToCloud(u.uid); }
+            renderProfile();
+        });
     });
-
-    // 2. Try persistence, but ignore Brave strict blocking errors
-    fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(e => console.warn("Brave block bypassed"));
-
   } catch(e) { console.error(e); renderProfile(); }
 }
 
@@ -1013,18 +962,35 @@ function listenToCloud(uid){
 function pushToCloud(){ if(fbUser && fbDb) fbDb.collection('maro-hisab-users').doc(fbUser.uid).set({loans, txns, budgets, accounts, appPin}); }
 
 function doSignUp(){
-  if(!fbAuth){ showToast('Still connecting… please wait a moment and try again'); initFirebase(); return; }
-  fbAuth.createUserWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPassword').value)
+  if(!fbAuth) return;
+  const e = document.getElementById('authEmail').value, p = document.getElementById('authPassword').value;
+  
+  // Force persistence right before login
+  fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+  .then(() => fbAuth.createUserWithEmailAndPassword(e, p))
   .then(()=>{ closeModal('syncOverlay'); showToast('Account Registered'); renderProfile(); })
-  .catch(e=>alert(e.message));
+  .catch(err=>alert(err.message));
 }
+
 function doSignIn(){
-  if(!fbAuth){ showToast('Still connecting… please wait a moment and try again'); initFirebase(); return; }
-  fbAuth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPassword').value)
+  if(!fbAuth) return;
+  const e = document.getElementById('authEmail').value, p = document.getElementById('authPassword').value;
+  
+  // Force persistence right before login
+  fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+  .then(() => fbAuth.signInWithEmailAndPassword(e, p))
   .then(()=>{ closeModal('syncOverlay'); showToast('Signed In Successfully'); renderProfile(); })
-  .catch(e=>alert(e.message));
+  .catch(err=>alert(err.message));
 }
-function doSignOut(){ if(confirm("Clear local cache and Sign Out?")){ if(fbAuth) fbAuth.signOut(); if(fbUnsub) fbUnsub(); localStorage.clear(); location.reload(); } }
+
+function doSignOut(){ 
+  if(confirm("Clear local cache and Sign Out?")){ 
+    if(fbAuth) fbAuth.signOut(); 
+    if(fbUnsub) fbUnsub(); 
+    localStorage.clear(); 
+    location.reload(); 
+  } 
+}
 
 function renderProfile(){
   const signedInDiv = document.getElementById('profileSignedIn'); const signedOutDiv = document.getElementById('profileSignedOut');
