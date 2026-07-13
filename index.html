@@ -141,6 +141,7 @@
   .subnav button.on { background: var(--accent); color: #000; border-color: var(--accent); }
 
   #appLockOverlay { background: var(--bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+  .mobile-nav { display: none; }
   .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); background: var(--surface); transition: 0.2s; }
   .pin-dot.filled { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); transform: scale(1.2); }
   .pin-pad { display: grid; grid-template-columns: repeat(3, 70px); gap: 20px; justify-content: center; margin: 0 auto; }
@@ -848,6 +849,35 @@ function openTxnModal(id){ document.getElementById('txnId').value = id||''; popu
 function saveTxn(){ const type = document.getElementById('txnType').value; const amount = parseFloat(document.getElementById('txnAmount').value); if(!amount || amount<=0) return showToast('Enter valid amount'); const obj = { id: document.getElementById('txnId').value||uid(), type, amount, date: document.getElementById('txnDate').value||todayStr(), note: document.getElementById('txnNote').value }; if(type === 'transfer'){ obj.fromAccountId = document.getElementById('txnFromAccount').value; obj.toAccountId = document.getElementById('txnToAccount').value; if(obj.fromAccountId === obj.toAccountId) return showToast('Select different accounts'); } else { obj.category = document.getElementById('txnCategory').value || 'Other'; obj.accountId = document.getElementById('txnAccount').value; } txns = txns.filter(x=>x.id!==obj.id); txns.push(obj); saveAll(); closeModal('txnOverlay'); showToast('Transaction verified'); }
 function deleteTxn(id){ if(confirm('Delete transaction?')){ txns=txns.filter(x=>x.id!==id); saveAll(); } }
 
+function setLoanType(type){
+  document.getElementById('loanType').value = type;
+  document.querySelectorAll('#loanOverlay .seg button').forEach(b=> b.classList.toggle('on', b.dataset.val===type));
+}
+function setPaymentType(type){
+  document.getElementById('paymentType').value = type;
+  document.querySelectorAll('#ledgerOverlay .seg button').forEach(b=> b.classList.toggle('on', b.dataset.val===type));
+}
+function getDueLists(){
+  const today = todayStr();
+  const overdue = [], dueSoon = [];
+  loans.forEach(l=>{
+    if(l.status === 'Paid') return;
+    const due = l.returnDate || l.date;
+    if(due < today) overdue.push({l, daysOver: daysBetween(due, today)});
+    else if(daysBetween(today, due) <= 7) dueSoon.push({l, daysLeft: daysBetween(today, due)});
+  });
+  overdue.sort((a,b)=>b.daysOver-a.daysOver);
+  dueSoon.sort((a,b)=>a.daysLeft-b.daysLeft);
+  return {overdue, dueSoon};
+}
+function sendWhatsAppReminder(id){
+  const l = loans.find(x=>x.id===id); if(!l) return;
+  const c = computeLedger(l);
+  const msg = l.type==='given'
+    ? `નમસ્તે ${l.name}, આ એક મિત્રતાપૂર્ણ રીમાઇન્ડર છે. આપણી લેજર વિગત મુજબ: મૂડી: ${fmt(l.amount)}, બાકી વ્યાજ (તમારે આપવાનું): ${fmt(c.interest)}. કુલ બાકી બેલેન્સ: ${fmt(c.total)}. કૃપા કરીને જલદીથી હિસાબ ક્લિયર કરવા વિનંતી. આભાર!`
+    : `નમસ્તે ${l.name}, આ એક update છે. આપણી લેજર વિગત મુજબ, મારે તમને ચૂકવવાનું: મૂડી: ${fmt(l.amount)}, બાકી વ્યાજ (મારે ચૂકવવાનું): ${fmt(c.interest)}. કુલ બાકી: ${fmt(c.total)}. જલદી ક્લિયર કરીશ. આભાર!`;
+  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+}
 function openLoanModal(id){ document.getElementById('loanId').value = id||''; if(id){ const l = loans.find(x=>x.id===id); ['Name','Amount','Rate','Date','ReturnDate'].forEach(k=> document.getElementById('loan'+k).value=l[k.toLowerCase()]); setLoanType(l.type); } else { ['Name','Amount','Rate'].forEach(k=> document.getElementById('loan'+k).value=''); setLoanType('given'); document.getElementById('loanDate').value=todayStr(); document.getElementById('loanReturnDate').value=todayStr(); } openModal('loanOverlay'); }
 function saveLoan(){ const id=document.getElementById('loanId').value||uid(); const obj = {id, name:document.getElementById('loanName').value, type:document.getElementById('loanType').value, amount:parseFloat(document.getElementById('loanAmount').value), rate:parseFloat(document.getElementById('loanRate').value), date:document.getElementById('loanDate').value, returnDate:document.getElementById('loanReturnDate').value, status:'Pending'}; loans = loans.filter(x=>x.id!==id); loans.push(obj); saveAll(); closeModal('loanOverlay'); showToast('Loan saved'); }
 function deleteLoan(id){ if(confirm('Delete record?')){ loans=loans.filter(x=>x.id!==id); saveAll(); } }
@@ -905,13 +935,13 @@ function listenToCloud(uid){
 function pushToCloud(){ if(fbUser && fbDb) fbDb.collection('maro-hisab-users').doc(fbUser.uid).set({loans, txns, budgets, accounts, appPin}); }
 
 function doSignUp(){
-  if(!fbAuth) return;
+  if(!fbAuth){ showToast('Still connecting… please wait a moment and try again'); initFirebase(); return; }
   fbAuth.createUserWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPassword').value)
   .then(()=>{ closeModal('syncOverlay'); showToast('Account Registered'); renderProfile(); })
   .catch(e=>alert(e.message));
 }
 function doSignIn(){
-  if(!fbAuth) return;
+  if(!fbAuth){ showToast('Still connecting… please wait a moment and try again'); initFirebase(); return; }
   fbAuth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPassword').value)
   .then(()=>{ closeModal('syncOverlay'); showToast('Signed In Successfully'); renderProfile(); })
   .catch(e=>alert(e.message));
@@ -956,6 +986,7 @@ document.getElementById('todayDate').textContent = new Date().toLocaleDateString
 document.documentElement.setAttribute('data-theme', localStorage.getItem('mh_theme')||'dark');
 loadAll(); checkLock();
 setTimeout(()=>{ if(!fbAuth) initFirebase(); }, 1500);
+setTimeout(()=>{ if(!fbAuth) initFirebase(); }, 4000);
 </script>
 </body>
 </html>
