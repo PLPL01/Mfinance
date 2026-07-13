@@ -71,11 +71,11 @@
   .bank-card .label, .bank-card .value { color: #fff !important; }
   .bank-card::after { content: ''; position: absolute; top: -50%; right: -50%; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%; z-index: 1; pointer-events: none;}
   
-  /* Quick Actions for Bank View */
-  .quick-actions { display: flex; gap: 12px; margin-bottom: 24px; }
-  .quick-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px 10px; color: var(--text-primary); font-weight: 600; font-size: 13px; cursor: pointer; transition: 0.2s; box-shadow: var(--shadow-soft); }
+  /* HDFC STYLE ACTIONS */
+  .quick-actions { display: flex; gap: 12px; margin-bottom: 24px; width: 100%; }
+  .quick-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 10px; color: var(--text-primary); font-weight: 600; font-size: 13px; cursor: pointer; transition: 0.2s; box-shadow: var(--shadow-soft); }
   .quick-btn:hover { border-color: var(--accent); transform: translateY(-2px); }
-  .quick-btn .ico { font-size: 28px; margin-bottom: 8px; }
+  .quick-btn .ico { font-size: 24px; margin-bottom: 6px; }
   .qb-green .ico { color: var(--green); }
   .qb-red .ico { color: var(--red); }
   .qb-blue .ico { color: #1a73e8; }
@@ -177,7 +177,6 @@
 </head>
 <body>
 
-<!-- PIN LOCK OVERLAY -->
 <div id="appLockOverlay" style="position:fixed; inset:0; z-index:9999; display:none; flex-direction:column; align-items:center; justify-content:center;">
   <div style="font-size:36px; margin-bottom:16px;">🔒</div>
   <h2 id="lockTitle" style="color:var(--text-primary); margin-bottom:0;">Enter PIN</h2>
@@ -205,20 +204,15 @@
         <div class="nav-item" data-view="txns" onclick="go('txns')"> <span class="ico">⇄</span> Transactions</div>
         <div class="nav-item" data-view="profile" onclick="go('profile')"> <span class="ico">⚙</span> Profile & Tools</div>
     </div>
-    <div style="margin-top:auto; padding:16px; font-size:12px; color:var(--text-secondary); text-align:center;">
-        Secured by My Ledger
-    </div>
   </nav>
 
-  <!-- MOBILE BOTTOM NAV (Strictly 5 items to avoid squishing) -->
+  <!-- MOBILE BOTTOM NAV -->
   <nav class="mobile-nav">
     <div class="mobile-nav-item active" data-view="dashboard" onclick="go('dashboard')"><span class="ico">◆</span>Home</div>
     <div class="mobile-nav-item" data-view="accounts" onclick="go('accounts')"><span class="ico">🏦</span>Banks</div>
     <div class="mobile-nav-item" data-view="loans" onclick="go('loans')"><span class="ico">₹</span>Loans</div>
     <div class="mobile-nav-item" data-view="txns" onclick="go('txns')"><span class="ico">⇄</span>Txns</div>
-    <div class="mobile-nav-item" data-view="profile" onclick="go('profile')">
-      <span class="ico" style="position:relative;">⚙<span id="badgeBottom" class="badge-count" style="position:absolute; top:-5px; right:-10px; display:none;">0</span></span>Tools
-    </div>
+    <div class="mobile-nav-item" data-view="profile" onclick="go('profile')"><span class="ico">⚙</span>Tools</div>
   </nav>
 
   <!-- MAIN CONTENT -->
@@ -226,7 +220,6 @@
     <div class="topbar">
       <h1 id="viewTitle" class="gu">Dashboard</h1>
       <div class="topbar-right">
-          <!-- ADVANCED DATE FILTER -->
           <select id="globalDateFilter" class="filter-select" onchange="renderAll()">
               <option value="this_month">📅 This Month</option>
               <option value="last_month">📅 Last Month</option>
@@ -248,7 +241,7 @@
         <div class="card"><div class="label"><span id="dashLoanNetSub">Loan Net</span> <span class="ico">₹</span></div><div class="value num" id="dashLoanNet">₹0</div></div>
       </div>
 
-      <div class="grid-2" style="display:grid;grid-template-columns:1.3fr 1fr;gap:18px;margin-bottom:20px;">
+      <div class="grid-2">
         <div class="panel" style="overflow: hidden;">
           <h3 style="margin-bottom:14px;font-size:15px;">Income vs Expense Trend</h3>
           <div style="position:relative; width:100%; height:200px;"><canvas id="chartMonthly"></canvas></div>
@@ -271,51 +264,44 @@
       </div>
     </section>
 
-    <!-- NEW: DEDICATED ACCOUNTS & WALLETS VIEW (HDFC STYLE) -->
+    <!-- HDFC STYLE LEDGER MANAGER -->
     <section class="view" id="view-accounts">
-        <!-- STATE 1: ACCOUNTS LIST -->
         <div id="accountsListView">
             <div class="panel-head" style="margin-bottom: 24px;">
-                <p style="color:var(--text-secondary); font-size:14px; line-height:1.5;">Manage your Bank accounts, Credit Cards, and Cash wallets. Click on any bank to open its Passbook.</p>
+                <p style="color:var(--text-secondary); font-size:14px; line-height:1.5;">તમારા બેંક એકાઉન્ટ્સ, વોલેટ અને ક્રેડિટ કાર્ડ્સ મેનેજ કરો. પાસબુક જોવા માટે કોઈપણ બેંક પર ક્લિક કરો.</p>
                 <button class="btn" onclick="openModal('manageAccountsOverlay')">⚙ Manage Accounts</button>
             </div>
-            <div class="cards" id="accountsGrid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
-                <!-- Bank Cards Rendered Here -->
-            </div>
+            <div class="cards" id="accountsGrid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));"></div>
         </div>
         
-        <!-- STATE 2: SINGLE BANK DETAIL VIEW -->
         <div id="accountDetailView" style="display:none;">
-            <button class="btn btn-ghost" style="margin-bottom:20px;" onclick="closeAccountDetail()">← Back to Banks</button>
-            
-            <div class="card bank-card" id="detailBankCard" style="margin-bottom:24px; border-radius:var(--radius-lg); padding:32px;">
-                <!-- Bank info rendered here -->
-            </div>
+            <button class="btn btn-ghost" style="margin-bottom:20px; font-weight:600;" onclick="closeAccountDetail()">← Back to Banks</button>
+            <div class="card bank-card" id="detailBankCard" style="margin-bottom:24px; border-radius:var(--radius-lg); padding:32px;"></div>
 
-            <!-- HDFC Style Quick Actions -->
+            <!-- CRITICAL ROUTINE: Live Credit/Debit Matrix -->
             <div class="quick-actions">
                 <div class="quick-btn qb-green" onclick="quickBankTxn('income')">
                     <div class="ico">📥</div>
-                    <div>+ Deposit</div>
+                    <div>+ Deposit (જમા)</div>
                 </div>
                 <div class="quick-btn qb-red" onclick="quickBankTxn('expense')">
                     <div class="ico">📤</div>
-                    <div>- Spend</div>
+                    <div>- Spend (ઉપાડ)</div>
                 </div>
                 <div class="quick-btn qb-blue" onclick="quickBankTxn('transfer')">
                     <div class="ico">⇄</div>
-                    <div>Transfer</div>
+                    <div>Transfer (ટ્રાન્સફર)</div>
                 </div>
             </div>
 
             <div class="panel">
                 <div class="panel-head">
                     <h3 class="gu">Transaction Passbook</h3>
-                    <button class="btn btn-ghost btn-sm" onclick="exportAccountCSV()">📥 CSV (Excel)</button>
+                    <button class="btn btn-ghost btn-sm" onclick="exportAccountCSV()">📥 CSV Flow</button>
                 </div>
                 <div class="table-wrapper">
                     <table>
-                        <thead><tr><th>Date</th><th>Description</th><th class="right">Amount</th></tr></thead>
+                        <thead><tr><th>Date</th><th>Description</th><th class="right">Volume Split</th></tr></thead>
                         <tbody id="detailBankTxns"></tbody>
                     </table>
                 </div>
@@ -323,7 +309,7 @@
         </div>
     </section>
 
-    <!-- LOANS VIEW (WITH PERSON TABS) -->
+    <!-- LOANS VIEW -->
     <section class="view" id="view-loans">
         <div class="panel-head" style="margin-bottom:10px;">
           <div class="subnav">
@@ -332,9 +318,7 @@
           </div>
           <button class="btn" onclick="openLoanModal()">+ New Loan</button>
         </div>
-        
         <input type="text" id="loanSearch" class="search-box" style="margin-bottom:16px;" placeholder="🔍 Search names, notes..." oninput="renderLoans()">
-
         <div class="panel" id="loans-entries" style="padding:0; overflow:hidden;">
             <div class="table-wrapper">
                 <table>
@@ -343,10 +327,7 @@
                 </table>
             </div>
         </div>
-        
-        <div id="loans-people" style="display:none;">
-            <div class="cards" id="peopleCards" style="margin-bottom:0;"></div>
-        </div>
+        <div id="loans-people" style="display:none;"><div class="cards" id="peopleCards" style="margin-bottom:0;"></div></div>
     </section>
 
     <!-- TRANSACTIONS VIEW -->
@@ -371,44 +352,47 @@
 
     <!-- BUDGET VIEW -->
     <section class="view" id="view-budget">
-        <div class="panel-head">
-            <p style="color:var(--text-secondary); max-width:500px; font-size:14px; line-height:1.5;">Set spending limits for categories. Progress bars update based on selected Date Filter.</p>
-            <button class="btn" onclick="openModal('budgetOverlay')">+ Add Budget</button>
-        </div>
+        <div class="panel-head"><button class="btn" onclick="openModal('budgetOverlay')">+ Add Budget</button></div>
         <div class="panel" id="budgetPanel"></div>
     </section>
 
-    <!-- CALCULATORS -->
+    <!-- CALCULATORS HUB -->
     <section class="view" id="view-calculators">
-      <div class="panel-head">
-          <h3 id="calcHubTitle" class="gu">Financial Calculators</h3>
-          <button class="btn btn-ghost btn-sm" id="calcBackBtn" style="display:none;" onclick="resetCalcHub()">← Categories</button>
-      </div>
+      <div class="panel-head"><h3 id="calcHubTitle" class="gu">Financial Calculators</h3><button class="btn btn-ghost btn-sm" id="calcBackBtn" style="display:none;" onclick="resetCalcHub()">← Categories</button></div>
       <div id="calcCategoryGrid" class="cards" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
           <div class="card" onclick="openCalcTool('sip', 'SIP Calculator')"><div class="label">Investment</div><div class="value" style="font-size:18px;">SIP Calc</div></div>
           <div class="card" onclick="openCalcTool('emi', 'EMI Simulator')"><div class="label">Banking</div><div class="value" style="font-size:18px;">EMI Calc</div></div>
           <div class="card" onclick="openCalcTool('gst', 'GST Splitter')"><div class="label">Business</div><div class="value" style="font-size:18px;">GST Calc</div></div>
-          <div class="card" onclick="openCalcTool('si', 'Simple Interest')"><div class="label">Finance</div><div class="value" style="font-size:18px;">Interest</div></div>
       </div>
       <div id="activeCalcArea" style="display:none; max-width: 600px;">
-        <div id="calc-sip" class="panel calc-panel" style="display:none;"> <div class="field"><label>Monthly Investment (₹)</label><input type="number" id="sipAmount" value="5000" oninput="calcSIP()"></div> <div class="field-row"> <div class="field"><label>Return Rate (% p.a.)</label><input type="number" id="sipRate" value="12" oninput="calcSIP()"></div> <div class="field"><label>Years</label><input type="number" id="sipYears" value="10" oninput="calcSIP()"></div> </div> <div id="sipResult" class="num" style="margin-top:16px; font-weight:600; color:var(--accent); line-height:1.6;"></div> </div>
-        <div id="calc-emi" class="panel calc-panel" style="display:none;"> <div class="field"><label>Loan Amount (₹)</label><input type="number" id="emiAmount" value="500000" oninput="calcEMI()"></div> <div class="field-row"> <div class="field"><label>Interest Rate (% p.a.)</label><input type="number" id="emiRate" value="9" oninput="calcEMI()"></div> <div class="field"><label>Tenure (Years)</label><input type="number" id="emiYears" value="5" oninput="calcEMI()"></div> </div> <div id="emiResult" class="num" style="margin-top:16px; font-weight:600; color:var(--accent); line-height:1.6;"></div> </div>
-        <div id="calc-gst" class="panel calc-panel" style="display:none;"> <div class="field-row"> <div class="field"><label>Amount (₹)</label><input type="number" id="gstAmount" value="10000" oninput="calcGST()"></div> <div class="field"><label>GST Rate (%)</label><select id="gstRate" onchange="calcGST()"><option value="5">5%</option><option value="12">12%</option><option value="18" selected>18%</option><option value="28">28%</option></select></div> </div> <div class="field"><label>Mode</label><select id="gstType" onchange="calcGST()"><option value="add">Add GST (+)</option><option value="remove">Remove GST (Inclusive)</option></select></div> <div id="gstResult" class="num" style="margin-top:16px; font-weight:600; color:var(--accent); line-height:1.6;"></div> </div>
-        <div id="calc-si" class="panel calc-panel" style="display:none;"> <div class="field-row"> <div class="field"><label>Principal (₹)</label><input type="number" id="siAmount" value="50000" oninput="calcSI()"></div> <div class="field"><label>Rate (% p.a.)</label><input type="number" id="siRate" value="2" oninput="calcSI()"></div> </div> <div class="field-row"> <div class="field"><label>Time Duration</label><input type="number" id="siTime" value="6" oninput="calcSI()"></div> <div class="field"><label>Time Format</label><select id="siType" onchange="calcSI()"><option value="years">Years</option><option value="months" selected>Months</option><option value="days">Days</option></select></div> </div> <div id="siResult" class="num" style="margin-top:16px; font-weight:600; color:var(--accent); line-height:1.6;"></div> </div>
+        <div id="calc-sip" class="panel calc-panel" style="display:none;"> <div class="field"><label>Monthly Investment (₹)</label><input type="number" id="sipAmount" value="5000" oninput="calcSIP()"></div> <div id="sipResult" class="num"></div> </div>
+        <div id="calc-emi" class="panel calc-panel" style="display:none;"> <div class="field"><label>Loan Amount (₹)</label><input type="number" id="emiAmount" value="500000" oninput="calcEMI()"></div> <div id="emiResult" class="num"></div> </div>
+        <div id="calc-gst" class="panel calc-panel" style="display:none;"> <div class="field"><label>Amount (₹)</label><input type="number" id="gstAmount" value="10000" oninput="calcGST()"></div> <div id="gstResult" class="num"></div> </div>
       </div>
     </section>
 
-    <!-- PROFILE & TOOLS VIEW -->
+    <!-- PROFILE & TOOLS VIEW (BLANK SCREEN FIX APPLIED) -->
     <section class="view" id="view-profile">
+      
+      <!-- By default, showing signed out so it NEVER blanks out -->
+      <div id="profileSignedOut">
+        <div class="panel" style="text-align:center; padding:40px 20px;">
+          <div style="font-size:48px; margin-bottom:16px;">☁️</div>
+          <h3 style="margin-bottom:10px;">Cloud Sync & Account</h3>
+          <p style="color:var(--text-secondary); font-size:14px; max-width:400px; margin:0 auto 24px;">Sign in to securely sync your data across devices. Brave Browser users: Ensure your Shields are not blocking this.</p>
+          <button class="btn" onclick="openModal('syncOverlay')">⚙️ Setup Sync / Login</button>
+        </div>
+      </div>
+
       <div id="profileSignedIn" style="display:none;">
         <div class="panel" style="display:flex; align-items:center; gap:16px; margin-bottom:20px; flex-wrap:wrap;">
           <div id="profileAvatar" style="width:64px; height:64px; border-radius:50%; background:var(--accent); color:#000; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:700; flex-shrink:0;">?</div>
           <div style="flex:1;">
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
-              <h2 id="profileNameDisplay" style="margin:0; font-size: 20px;">Name</h2>
+              <h2 id="profileNameDisplay" style="margin:0; font-size: 20px;">User</h2>
               <button class="icon-btn" onclick="editName()" title="Edit Name" style="width:28px; height:28px; font-size:12px;">✎</button>
             </div>
-            <div id="profileEmailDisplay" class="num" style="color:var(--text-secondary); font-size:13px;">Email</div>
+            <div id="profileEmailDisplay" class="num" style="color:var(--text-secondary); font-size:13px;">Cloud Active</div>
           </div>
           <button class="btn btn-ghost" style="color:var(--red); border-color:var(--red); padding: 8px 16px;" onclick="doSignOut()">Sign Out</button>
         </div>
@@ -425,37 +409,48 @@
                 <h3 style="margin-bottom:16px;">Data Vault</h3>
                 <div class="setting-item" onclick="exportData()"><span class="ico">⬇️</span><span>Export Encrypted Backup</span></div>
                 <div class="setting-item" onclick="document.getElementById('importFile').click()"><span class="ico">⬆️</span><span>Restore Data</span></div>
-                <div class="setting-item" onclick="go('diagnostics')"><span class="ico">🧪</span><span>Run Diagnostics Test</span></div>
                 <input type="file" id="importFile" accept=".enc" style="display:none;" onchange="importData(event)">
             </div>
         </div>
       </div>
 
-      <div id="profileSignedOut" style="display:none;">
-        <div class="panel" style="text-align:center; padding:40px 20px;">
-          <div style="font-size:48px; margin-bottom:16px;">☁️</div>
-          <h3 style="margin-bottom:10px;">Cloud Mode Inactive</h3>
-          <p style="color:var(--text-secondary); font-size:14px; max-width:400px; margin:0 auto 24px;">Sign in to securely sync your data across devices and keep your ledgers backed up to the cloud.</p>
-          <button class="btn" onclick="openModal('syncOverlay')">⚙️ Setup Sync / Login</button>
-        </div>
-      </div>
     </section>
-
   </main>
 </div>
 
 <!-- MODALS -->
+<div class="overlay" id="syncOverlay" onclick="if(event.target===this) closeModal('syncOverlay')">
+  <div class="modal">
+    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+        <h3 style="margin:0;">Cloud Sync & Login</h3>
+        <button class="icon-btn" onclick="closeModal('syncOverlay')">✕</button>
+    </div>
+    <p style="color:var(--text-secondary); font-size:13px; margin-bottom:20px;">Securely backup your financial data. <b>Note for Brave users:</b> Disable Shields if login fails.</p>
+    
+    <div id="syncStep2">
+      <div class="field">
+        <label>Email Address</label>
+        <input type="email" id="authEmail" placeholder="your@email.com">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="authPassword" placeholder="Minimum 6 characters">
+      </div>
+      <div class="modal-actions" style="justify-content:flex-end; gap:10px;">
+          <button type="button" class="btn btn-ghost" id="btnSignUp" onclick="doSignUp()">Create Acct</button>
+          <button type="button" class="btn" id="btnSignIn" onclick="doSignIn()">Sign In</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-<!-- MANAGE ACCOUNTS MODAL -->
 <div class="overlay" id="manageAccountsOverlay" onclick="if(event.target===this) closeModal('manageAccountsOverlay')">
   <div class="modal">
     <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
         <h3 style="margin:0;">Manage Accounts</h3>
         <button class="icon-btn print-hide" onclick="closeModal('manageAccountsOverlay')">✕</button>
     </div>
-    <div class="table-wrapper" style="max-height:300px; margin-bottom:20px;">
-        <table style="width:100%;"><tbody id="accountsConfigTable"></tbody></table>
-    </div>
+    <div class="table-wrapper" style="max-height:300px; margin-bottom:20px;"><table style="width:100%;"><tbody id="accountsConfigTable"></tbody></table></div>
     <div style="background:var(--surface-hover); padding:16px; border-radius:var(--radius-md);">
         <h4 style="font-size:13px; margin-bottom:10px;">+ Add New Bank / Wallet</h4>
         <div class="field-row">
@@ -473,25 +468,19 @@
   </div>
 </div>
 
-<!-- PERSON DETAIL MODAL -->
 <div class="overlay" id="personOverlay" onclick="if(event.target===this) closeModal('personOverlay')">
   <div class="modal" style="max-width:640px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
         <h3 id="personModalName" style="margin:0;">Transactions</h3>
-        <div class="print-hide">
-          <button class="btn btn-ghost btn-sm" onclick="window.print()">🖨️ PDF</button>
-          <button class="icon-btn" onclick="closeModal('personOverlay')">✕</button>
-        </div>
+        <button class="icon-btn" onclick="closeModal('personOverlay')">✕</button>
     </div>
     <div class="table-wrapper" style="max-height: 400px; background:var(--bg); border-radius:var(--radius-md); padding:10px;">
-        <table style="margin-bottom:0;">
+        <table>
           <thead><tr><th>Type</th><th class="right">Principal</th><th>Date</th><th class="right">Total Left</th><th class="right print-hide">Actions</th></tr></thead>
           <tbody id="personEntriesTable"></tbody>
         </table>
     </div>
-    <div class="modal-actions print-hide" style="margin-top:20px; justify-content:center;">
-      <button class="btn" style="width:100%;" onclick="addEntryForPerson()">+ New Entry for This Person</button>
-    </div>
+    <div class="modal-actions print-hide" style="margin-top:20px; justify-content:center;"><button class="btn" style="width:100%;" onclick="addEntryForPerson()">+ New Entry</button></div>
   </div>
 </div>
 
@@ -519,7 +508,6 @@
   </div>
 </div>
 
-<!-- ADVANCED TXN MODAL (WITH TRANSFERS) -->
 <div class="overlay" id="txnOverlay" onclick="if(event.target===this) closeModal('txnOverlay')">
   <div class="modal">
     <h3>Transaction Details</h3>
@@ -532,28 +520,22 @@
       </div>
       <input type="hidden" id="txnType" value="expense">
     </div>
-    
     <div class="field-row">
       <div class="field"><label>Amount (₹)</label><input type="number" id="txnAmount" placeholder="0"></div>
       <div class="field"><label>Date</label><input type="date" id="txnDate"></div>
     </div>
-    
     <div id="txnStandardFields">
         <div class="field-row">
           <div class="field"><label>Category</label><input type="text" id="txnCategory" placeholder="Salary, Groceries..."></div>
-          <div class="field"><label>Account Wallet</label>
-            <select id="txnAccount"></select>
-          </div>
+          <div class="field"><label>Account Wallet</label><select id="txnAccount"></select></div>
         </div>
     </div>
-    
     <div id="txnTransferFields" style="display:none;">
         <div class="field-row">
           <div class="field"><label>From (Minus)</label><select id="txnFromAccount"></select></div>
           <div class="field"><label>To (Plus)</label><select id="txnToAccount"></select></div>
         </div>
     </div>
-    
     <div class="field"><label>Note / Remarks</label><input type="text" id="txnNote" placeholder="Optional descriptions..."></div>
     <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('txnOverlay')">Cancel</button><button class="btn" onclick="saveTxn()">Save Transaction</button></div>
   </div>
@@ -572,21 +554,14 @@
   <div class="modal" style="max-width:620px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
       <h3 id="ledgerTitle">Payment Ledger</h3>
-      <div class="print-hide">
-          <button class="btn btn-ghost btn-sm" onclick="window.print()" style="box-shadow:none;">🖨️ PDF</button>
-          <button class="icon-btn" onclick="closeModal('ledgerOverlay')">✕</button>
-      </div>
+      <button class="icon-btn" onclick="closeModal('ledgerOverlay')">✕</button>
     </div>
-    
     <div id="ledgerSummaryCards" style="display:flex; gap:10px; margin-bottom:20px; padding:12px; background:var(--bg); border-radius:var(--radius-md); font-size:13px; font-weight:600;"></div>
     <div class="table-wrapper"><table style="margin-bottom:16px;"><tbody id="ledgerPaymentsTable"></tbody></table></div>
-    
-    <button id="btnShowAddPayment" class="btn btn-ghost print-hide" style="width:100%; border:1px dashed var(--border); margin-bottom:20px;" onclick="document.getElementById('ledgerFormSection').style.display='block'; this.style.display='none';">+ Add New Repayment</button>
-
-    <div id="ledgerFormSection" class="print-hide" style="background:var(--bg); padding:20px; border-radius:var(--radius-md); display:none; margin-bottom:20px;">
-        <h4 style="margin-bottom:16px; font-size:14px;">Log Repayment Entry</h4>
+    <button id="btnShowAddPayment" class="btn btn-ghost" style="width:100%; border:1px dashed var(--border); margin-bottom:20px;" onclick="document.getElementById('ledgerFormSection').style.display='block'; this.style.display='none';">+ Add New Repayment</button>
+    <div id="ledgerFormSection" style="background:var(--bg); padding:20px; border-radius:var(--radius-md); display:none; margin-bottom:20px;">
         <div class="field-row">
-          <div class="field"><label>Payment Type</label>
+          <div class="field"><label>Type</label>
             <div class="seg">
                 <button type="button" class="on" data-val="interest" id="paymentTypeInterestBtn" onclick="setPaymentType('interest')">Interest</button>
                 <button type="button" data-val="principal" onclick="setPaymentType('principal')">Principal</button>
@@ -603,10 +578,7 @@
 
 <div class="overlay" id="remindersOverlay" onclick="if(event.target===this) closeModal('remindersOverlay')">
   <div class="modal" style="max-width: 600px;">
-    <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
-        <h3 style="margin:0;">System Reminders</h3>
-        <button class="icon-btn" onclick="closeModal('remindersOverlay')">✕</button>
-    </div>
+    <div style="display:flex; justify-content:space-between; margin-bottom:20px;"><h3>System Reminders</h3><button class="icon-btn" onclick="closeModal('remindersOverlay')">✕</button></div>
     <div class="panel" style="border-left: 4px solid var(--red); padding: 16px; margin-bottom:16px;">
       <h3 style="color:var(--red); margin-bottom:12px; font-size:15px;">⚠ Overdue Loans</h3>
       <div class="table-wrapper"><table><thead><tr><th>Name</th><th class="right">Amount</th><th class="right">Overdue</th></tr></thead><tbody id="overdueTable"></tbody></table></div>
@@ -614,26 +586,6 @@
     <div class="panel" style="border-left: 4px solid var(--accent); padding: 16px;">
       <h3 style="color:var(--accent); margin-bottom:12px; font-size:15px;">📅 Due within 7 Days</h3>
       <div class="table-wrapper"><table><thead><tr><th>Name</th><th class="right">Amount</th><th class="right">Days Left</th></tr></thead><tbody id="dueSoonTable"></tbody></table></div>
-    </div>
-  </div>
-</div>
-
-<div class="overlay" id="syncOverlay" onclick="if(event.target===this) closeModal('syncOverlay')">
-  <div class="modal">
-    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-        <h3 style="margin:0;">Cloud Sync & Security</h3>
-        <button class="icon-btn" onclick="closeModal('syncOverlay')">✕</button>
-    </div>
-    <p style="color:var(--text-secondary); font-size:13px; margin-bottom:20px;">Securely backup your financial data to the cloud. End-to-end protected.</p>
-    <div id="syncStep2">
-      <div class="field"><label>Email Address</label><input type="email" id="authEmail" placeholder="your@email.com"></div>
-      <div class="field"><label>Password</label><input type="password" id="authPassword" placeholder="Minimum 6 characters"></div>
-      <div class="modal-actions" style="justify-content:flex-end;">
-          <div style="display:flex; gap:10px;">
-              <button class="btn btn-ghost" id="btnSignUp" onclick="doSignUp()">Create Acct</button>
-              <button class="btn" id="btnSignIn" onclick="doSignIn()">Sign In</button>
-          </div>
-      </div>
     </div>
   </div>
 </div>
@@ -655,44 +607,35 @@ function showToast(m){ const t = document.getElementById('toast'); t.textContent
 function openModal(id){ document.getElementById(id).classList.add('active'); if(id==='manageAccountsOverlay') renderManageAccounts(); if(id==='remindersOverlay') renderReminders(); }
 function closeModal(id){ document.getElementById(id).classList.remove('active'); }
 
-// ---------------- Date Filtering Logic ----------------
 function isDateInFilter(dStr){
     const filter = document.getElementById('globalDateFilter').value;
     if(filter === 'all') return true;
     const d = new Date(dStr), now = new Date();
     if(filter === 'this_month') return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-    if(filter === 'last_month'){
-        const lm = new Date(now.getFullYear(), now.getMonth()-1, 1);
-        return d.getFullYear() === lm.getFullYear() && d.getMonth() === lm.getMonth();
-    }
+    if(filter === 'last_month'){ const lm = new Date(now.getFullYear(), now.getMonth()-1, 1); return d.getFullYear() === lm.getFullYear() && d.getMonth() === lm.getMonth(); }
     if(filter === 'this_year') return d.getFullYear() === now.getFullYear();
     return true;
 }
 
-// ---------------- Navigation Control ----------------
 function go(view){
   document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(n=>n.classList.toggle('active', n.dataset.view===view));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+view).classList.add('active');
-  const titles = {dashboard:'Dashboard Overview', accounts:'Bank & Wallets', loans:'Loan Management', txns:'Transactions & Filters', budget:'Monthly Limits', calculators:'Financial Calculators', diagnostics:'System Diagnostics', profile:'Profile & Settings'};
+  const titles = {dashboard:'Dashboard Overview', accounts:'Bank & Wallets', loans:'Loan Management', txns:'Transactions & Filters', budget:'Monthly Limits', calculators:'Financial Calculators', profile:'Profile & Settings'};
   document.getElementById('viewTitle').textContent = titles[view] || 'My Ledger';
-  
-  if(view === 'accounts') closeAccountDetail(); // Reset view when entering
-  
+  if(view === 'accounts') closeAccountDetail();
   try {
       if(view==='profile') renderProfile();
       if(view==='dashboard') renderDashboardCharts();
-      if(view==='calculators') { resetCalcHub(); calcSIP(); calcEMI(); calcGST(); calcSI(); calcPct(); calcMileage(); }
   } catch(e) { console.error(e); }
 }
 
-// ---------------- Storage Load/Save ----------------
 function loadAll(){
   try{ loans = JSON.parse(localStorage.getItem('mh_loans')||'[]'); }catch(e){ loans = []; }
   try{ txns = JSON.parse(localStorage.getItem('mh_transactions')||'[]'); }catch(e){ txns = []; }
   try{ budgets = JSON.parse(localStorage.getItem('mh_budgets')||'{}'); }catch(e){ budgets = {}; }
-  try{ accounts = JSON.parse(localStorage.getItem('mh_accounts')); if(!accounts || !accounts.length) accounts = [{id:uid(), name:'Cash in Hand', type:'cash'}]; }catch(e){ accounts = [{id:uid(), name:'Cash in Hand', type:'cash'}]; }
-  try{ renderAll(); }catch(e){ console.error('renderAll failed:', e); }
+  try{ accounts = JSON.parse(localStorage.getItem('mh_accounts')); if(!accounts || !accounts.length) accounts = [{id:uid(), name:'Cash Wallet', type:'cash'}, {id:uid(), name:'HDFC Bank', type:'bank'}]; }catch(e){ accounts = [{id:uid(), name:'Cash Wallet', type:'cash'}, {id:uid(), name:'HDFC Bank', type:'bank'}]; }
+  renderAll();
   initFirebase();
 }
 function saveAll(){
@@ -710,7 +653,6 @@ function renderAll(){
   });
 }
 
-// ---------------- ACCOUNTS & WALLETS (HDFC BANK STYLE) ----------------
 function getAccountBalance(accId, applyFilter=false){
     let bal = 0;
     txns.forEach(t=>{
@@ -735,59 +677,34 @@ function renderAccountsWidget(){
         <div class="card bank-card" style="background:${bg};" onclick="showSingleAccount('${acc.id}')">
             <div class="label">${acc.name}</div>
             <div class="value num" style="font-size:28px;">${fmt(bal)}</div>
-            <div style="font-size:11px; margin-top:8px; opacity:0.8; position:relative; z-index:2; text-transform:uppercase;">${acc.type==='cc'?'Credit Card':'Savings / Wallet'}</div>
+            <div style="font-size:11px; margin-top:8px; opacity:0.8; z-index:2; text-transform:uppercase;">${acc.type==='cc'?'Credit Card':'Savings / Wallet'}</div>
         </div>`;
     });
 }
 
-function showSingleAccount(accId) {
-    activeBankId = accId;
-    document.getElementById('accountsListView').style.display = 'none';
-    document.getElementById('accountDetailView').style.display = 'block';
-    renderSingleAccount();
-}
-
-function closeAccountDetail() {
-    activeBankId = null;
-    document.getElementById('accountsListView').style.display = 'block';
-    document.getElementById('accountDetailView').style.display = 'none';
-}
+function showSingleAccount(accId) { activeBankId = accId; document.getElementById('accountsListView').style.display = 'none'; document.getElementById('accountDetailView').style.display = 'block'; renderSingleAccount(); }
+function closeAccountDetail() { activeBankId = null; document.getElementById('accountsListView').style.display = 'block'; document.getElementById('accountDetailView').style.display = 'none'; }
 
 function renderSingleAccount() {
     if(!activeBankId) return;
-    const acc = accounts.find(a => a.id === activeBankId);
-    if(!acc) return closeAccountDetail();
-
-    // Setup Main Card
+    const acc = accounts.find(a => a.id === activeBankId); if(!acc) return closeAccountDetail();
     const bal = getAccountBalance(acc.id, true);
     const bg = acc.type==='bank' ? 'var(--card-bank)' : (acc.type==='cc' ? 'var(--card-cc)' : 'var(--card-cash)');
-    const card = document.getElementById('detailBankCard');
-    card.style.background = bg;
+    const card = document.getElementById('detailBankCard'); card.style.background = bg;
     card.innerHTML = `<div class="label" style="color:#fff;">${acc.name} (Filtered Balance)</div><div class="value num" style="font-size:36px; color:#fff;">${fmt(bal)}</div>`;
 
-    // Render Transaction History (Passbook)
-    const tb = document.getElementById('detailBankTxns');
-    tb.innerHTML = '';
+    const tb = document.getElementById('detailBankTxns'); tb.innerHTML = '';
     const accTxns = txns.filter(t=> (t.accountId===activeBankId || t.fromAccountId===activeBankId || t.toAccountId===activeBankId) && isDateInFilter(t.date)).sort((a,b)=> new Date(b.date)-new Date(a.date));
-    
     if(!accTxns.length) { tb.innerHTML = '<tr><td colspan="3" class="empty">No transactions found in this period.</td></tr>'; return;}
-    
     accTxns.forEach(t=>{
-        let desc = t.category || 'Transfer';
-        let amtDisplay = '', colorClass = '';
-        
+        let desc = t.category || 'Transfer', amtDisplay = '', colorClass = '';
         if(t.type==='income' && t.accountId===activeBankId) { amtDisplay = '+ '+fmt(t.amount); colorClass='pos'; }
         else if(t.type==='expense' && t.accountId===activeBankId) { amtDisplay = '- '+fmt(t.amount); colorClass='neg'; }
         else if(t.type==='transfer'){
             if(t.fromAccountId===activeBankId) { amtDisplay = '- '+fmt(t.amount); colorClass='neg'; desc = `Sent to ${accounts.find(a=>a.id===t.toAccountId)?.name||''}`; }
             if(t.toAccountId===activeBankId) { amtDisplay = '+ '+fmt(t.amount); colorClass='pos'; desc = `Received from ${accounts.find(a=>a.id===t.fromAccountId)?.name||''}`; }
         }
-        
-        tb.innerHTML += `<tr style="cursor:pointer" onclick="openTxnModal('${t.id}')">
-          <td class="num" style="font-size:12px; color:var(--text-secondary);">${t.date}</td>
-          <td><div style="font-weight:600;">${desc}</div><div style="font-size:11px; color:var(--text-secondary);">${t.note||''}</div></td>
-          <td class="right num ${colorClass}" style="font-weight:700; font-size:15px;">${amtDisplay}</td>
-        </tr>`;
+        tb.innerHTML += `<tr style="cursor:pointer" onclick="openTxnModal('${t.id}')"><td class="num" style="font-size:12px; color:var(--text-secondary);">${t.date}</td><td><div style="font-weight:600;">${desc}</div><div style="font-size:11px; color:var(--text-secondary);">${t.note||''}</div></td><td class="right num ${colorClass}" style="font-weight:700; font-size:15px;">${amtDisplay}</td></tr>`;
     });
 }
 
@@ -796,64 +713,47 @@ function quickBankTxn(type) {
     document.getElementById('txnId').value = '';
     ['Amount','Category','Note'].forEach(k=> document.getElementById('txn'+k).value=''); 
     document.getElementById('txnDate').value=todayStr();
-    
-    setTxnType(type);
-    populateAccountDropdowns(); 
-    
-    if(type === 'transfer') {
-        document.getElementById('txnFromAccount').value = activeBankId;
-    } else {
-        document.getElementById('txnAccount').value = activeBankId;
-    }
+    setTxnType(type); populateAccountDropdowns(); 
+    if(type === 'transfer') { document.getElementById('txnFromAccount').value = activeBankId; } else { document.getElementById('txnAccount').value = activeBankId; }
     openModal('txnOverlay');
 }
 
 function populateAccountDropdowns(){
     let opts = accounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
-    ['txnAccount', 'txnFromAccount', 'txnToAccount'].forEach(id=>{
-        if(document.getElementById(id)) document.getElementById(id).innerHTML = opts;
-    });
+    ['txnAccount', 'txnFromAccount', 'txnToAccount'].forEach(id=>{ if(document.getElementById(id)) document.getElementById(id).innerHTML = opts; });
 }
 
 function renderManageAccounts(){
     const tb = document.getElementById('accountsConfigTable'); tb.innerHTML='';
     accounts.forEach(a=>{
-        const bal = getAccountBalance(a.id, false); // Total forever
+        const bal = getAccountBalance(a.id, false);
         tb.innerHTML += `<tr><td><div style="font-weight:600;">${a.name}</div><div style="font-size:11px; color:var(--text-secondary); text-transform:uppercase;">${a.type}</div></td><td class="right num">${fmt(bal)}</td><td class="right"><button class="icon-btn" onclick="deleteAccount('${a.id}')">✕</button></td></tr>`;
     });
 }
 function saveNewAccount(){
-    const name = document.getElementById('newAccName').value.trim();
-    if(!name) return showToast('Enter account name');
+    const name = document.getElementById('newAccName').value.trim(); if(!name) return showToast('Enter account name');
     accounts.push({id:uid(), name, type: document.getElementById('newAccType').value});
-    document.getElementById('newAccName').value='';
-    saveAll(); renderManageAccounts(); showToast('Account Added');
+    document.getElementById('newAccName').value=''; saveAll(); renderManageAccounts(); showToast('Account Added');
 }
 function deleteAccount(id){
     if(accounts.length <= 1) return alert('You must have at least one account.');
-    const hasTxns = txns.some(t=> t.accountId===id || t.fromAccountId===id || t.toAccountId===id);
-    if(hasTxns) return alert('Cannot delete account with existing transaction history. Please delete transactions first.');
+    if(txns.some(t=> t.accountId===id || t.fromAccountId===id || t.toAccountId===id)) return alert('Cannot delete account with transaction history.');
     accounts = accounts.filter(a=>a.id!==id); saveAll(); renderManageAccounts();
 }
 
-// ---------------- EXPORT TO CSV ----------------
 function exportTxnsCSV(){
     let csv = "Date,Type,Category/Desc,Amount,Account,Note\n";
-    const filtered = txns.filter(t=>isDateInFilter(t.date)).sort((a,b)=> new Date(b.date)-new Date(a.date));
-    filtered.forEach(t=>{
+    txns.filter(t=>isDateInFilter(t.date)).sort((a,b)=> new Date(b.date)-new Date(a.date)).forEach(t=>{
         let accName = accounts.find(a=>a.id===t.accountId)?.name || '-';
         if(t.type==='transfer') accName = `${accounts.find(a=>a.id===t.fromAccountId)?.name||'-'} -> ${accounts.find(a=>a.id===t.toAccountId)?.name||'-'}`;
         csv += `${t.date},${t.type.toUpperCase()},${(t.category||'Transfer').replace(/,/g,' ')},${t.amount},${accName},${(t.note||'').replace(/,/g,' ')}\n`;
     });
     triggerDownload('Transactions.csv', csv);
 }
-
 function exportAccountCSV(){
     if(!activeBankId) return;
-    const acc = accounts.find(a=>a.id===activeBankId);
-    let csv = `Date,Description,Out(-),In(+),Note\n`;
-    const accTxns = txns.filter(t=> (t.accountId===activeBankId || t.fromAccountId===activeBankId || t.toAccountId===activeBankId) && isDateInFilter(t.date)).sort((a,b)=> new Date(b.date)-new Date(a.date));
-    accTxns.forEach(t=>{
+    const acc = accounts.find(a=>a.id===activeBankId); let csv = `Date,Description,Out(-),In(+),Note\n`;
+    txns.filter(t=> (t.accountId===activeBankId || t.fromAccountId===activeBankId || t.toAccountId===activeBankId) && isDateInFilter(t.date)).sort((a,b)=> new Date(b.date)-new Date(a.date)).forEach(t=>{
         let desc = t.category || 'Transfer', outAmt='', inAmt='';
         if(t.type==='income' && t.accountId===activeBankId) inAmt = t.amount;
         if(t.type==='expense' && t.accountId===activeBankId) outAmt = t.amount;
@@ -865,24 +765,15 @@ function exportAccountCSV(){
     });
     triggerDownload(`${acc.name}_Passbook.csv`, csv);
 }
+function triggerDownload(filename, text){ const blob = new Blob([text], {type: 'text/csv'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
 
-function triggerDownload(filename, text){
-    const blob = new Blob([text], {type: 'text/csv'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-}
-
-
-// ---------------- LEDGER MATH ----------------
 function computeLedger(l){
   const payments = (l.payments||[]).slice().sort((a,b)=> new Date(a.date)-new Date(b.date));
   let principal = l.amount||0, checkpoint = l.date, interestAccrued = 0, interestPaid = 0;
   payments.forEach(p=>{
     const days = Math.max(0, Math.round((new Date(p.date)-new Date(checkpoint))/86400000));
     interestAccrued += principal * ((l.rate||0)/100) * (days/365);
-    if(p.type==='principal') principal = Math.max(0, principal-p.amount);
-    else interestPaid += p.amount;
-    checkpoint = p.date;
+    if(p.type==='principal') principal = Math.max(0, principal-p.amount); else interestPaid += p.amount; checkpoint = p.date;
   });
   const endDate = l.status === 'Paid' ? (payments.length?payments[payments.length-1].date:l.returnDate||todayStr()) : todayStr();
   const daysToEnd = Math.max(0, Math.round((new Date(endDate)-new Date(checkpoint))/86400000));
@@ -890,386 +781,164 @@ function computeLedger(l){
   return { outstandingPrincipal: principal, interest: Math.max(0, interestAccrued-interestPaid), total: principal+Math.max(0, interestAccrued-interestPaid), interestPaid };
 }
 
-// ---------------- LOANS ----------------
 function renderLoans(){
   const tbody = document.getElementById('loansTable'); tbody.innerHTML='';
   const q = (document.getElementById('loanSearch')?.value||'').toLowerCase();
   const f = loans.filter(l=>!q || l.name.toLowerCase().includes(q));
   if(!f.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty">No active records found.</td></tr>`; renderPeople(); return; }
-  
   f.slice().sort((a,b)=> new Date(b.date)-new Date(a.date)).forEach(l=>{
-    const c = computeLedger(l);
-    const principalPaid = l.amount - c.outstandingPrincipal;
-    const pctPaid = Math.round((principalPaid / l.amount) * 100) || 0;
-
-    tbody.innerHTML += `<tr style="cursor:pointer;" onclick="if(!event.target.closest('button')) openLedgerModal('${l.id}')">
-      <td><div style="font-weight:600;">${l.name}</div><div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">Paid Principal: ${pctPaid}%<div style="width:100px; height:4px; background:var(--surface-hover); border-radius:2px; overflow:hidden; margin-top:2px; border:1px solid var(--border);"><div style="width:${pctPaid}%; height:100%; background:var(--green); transition:width 0.4s;"></div></div></div></td>
-      <td><span class="tag ${l.type==='given'?'tag-given':'tag-taken'}">${l.type==='given'?'Given':'Taken'}</span></td>
-      <td class="right num">${fmt(l.amount)}</td><td class="num" style="color:var(--text-secondary);">${l.date}</td>
-      <td class="right"><div class="num">${fmt(c.interest)}</div><div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">${l.type==='given'?'Recd':'Paid'}: <span class="num">${fmt(c.interestPaid)}</span></div></td>
-      <td class="right num" style="font-weight:700;">${fmt(c.total)}</td>
-      <td class="right"><span class="tag ${l.status==='Paid'?'tag-given':'tag-expense'}" style="margin-right:8px;">${l.status||'Pending'}</span>${l.status !== 'Paid' ? `<button class="icon-btn" onclick="sendWhatsAppReminder('${l.id}')" title="WhatsApp Reminder" style="background:rgba(43,138,62,0.1); color:var(--green);">💬</button>` : ''}<button class="icon-btn" onclick="openLedgerModal('${l.id}')">💳</button><button class="icon-btn" onclick="openLoanModal('${l.id}')">✎</button></td>
-    </tr>`;
+    const c = computeLedger(l); const principalPaid = l.amount - c.outstandingPrincipal; const pctPaid = Math.round((principalPaid / l.amount) * 100) || 0;
+    tbody.innerHTML += `<tr style="cursor:pointer;" onclick="if(!event.target.closest('button')) openLedgerModal('${l.id}')"><td><div style="font-weight:600;">${l.name}</div><div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">Paid Principal: ${pctPaid}%<div style="width:100px; height:4px; background:var(--surface-hover); border-radius:2px; overflow:hidden; margin-top:2px; border:1px solid var(--border);"><div style="width:${pctPaid}%; height:100%; background:var(--green); transition:width 0.4s;"></div></div></div></td><td><span class="tag ${l.type==='given'?'tag-given':'tag-taken'}">${l.type==='given'?'Given':'Taken'}</span></td><td class="right num">${fmt(l.amount)}</td><td class="num" style="color:var(--text-secondary);">${l.date}</td><td class="right"><div class="num">${fmt(c.interest)}</div><div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">${l.type==='given'?'Recd':'Paid'}: <span class="num">${fmt(c.interestPaid)}</span></div></td><td class="right num" style="font-weight:700;">${fmt(c.total)}</td><td class="right"><span class="tag ${l.status==='Paid'?'tag-given':'tag-expense'}" style="margin-right:8px;">${l.status||'Pending'}</span>${l.status !== 'Paid' ? `<button class="icon-btn" onclick="sendWhatsAppReminder('${l.id}')">💬</button>` : ''}<button class="icon-btn" onclick="openLedgerModal('${l.id}')">💳</button></td></tr>`;
   });
   renderPeople();
 }
 
-// ---------------- TRANSACTIONS (WITH FILTER) ----------------
 function renderTxns(){
-  const tbody = document.getElementById('txnsTable'); tbody.innerHTML='';
-  const summaryContainer = document.getElementById('txnSummaryCards');
+  const tbody = document.getElementById('txnsTable'); tbody.innerHTML=''; const summaryContainer = document.getElementById('txnSummaryCards');
   const q = (document.getElementById('txnSearch')?.value||'').toLowerCase();
-  
   const f = txns.filter(t=>isDateInFilter(t.date) && (!q || (t.category||'').toLowerCase().includes(q) || (t.note||'').toLowerCase().includes(q)));
-  
-  let totalInc = 0, totalExp = 0;
-  f.forEach(t => { if(t.type==='income') totalInc += t.amount; else if(t.type==='expense') totalExp += t.amount; });
+  let totalInc = 0, totalExp = 0; f.forEach(t => { if(t.type==='income') totalInc += t.amount; else if(t.type==='expense') totalExp += t.amount; });
   summaryContainer.innerHTML = `<div class="card" style="padding:16px;"><div class="label">Filtered Income</div><div class="value pos num" style="font-size:22px;">${fmt(totalInc)}</div></div><div class="card" style="padding:16px;"><div class="label">Filtered Expense</div><div class="value neg num" style="font-size:22px;">${fmt(totalExp)}</div></div><div class="card" style="padding:16px;"><div class="label">Net Balance</div><div class="value num ${totalInc-totalExp>=0?'pos':'neg'}" style="font-size:22px;">${fmt(totalInc-totalExp)}</div></div>`;
   if(!f.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty">No records matched.</td></tr>`; return; }
-  
   f.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).forEach(t=>{
-    let accName = accounts.find(a=>a.id===t.accountId)?.name || 'Cash';
-    let typeClass = t.type==='income'?'tag-income':(t.type==='expense'?'tag-expense':'tag-transfer');
-    let displayAmt = t.type==='income'?'+':(t.type==='expense'?'-':'⇄ ');
-    
+    let accName = accounts.find(a=>a.id===t.accountId)?.name || 'Cash'; let typeClass = t.type==='income'?'tag-income':(t.type==='expense'?'tag-expense':'tag-transfer'); let displayAmt = t.type==='income'?'+':(t.type==='expense'?'-':'⇄ ');
     if(t.type==='transfer'){ accName = `${accounts.find(a=>a.id===t.fromAccountId)?.name||'-'} ➝ ${accounts.find(a=>a.id===t.toAccountId)?.name||'-'}`; }
-
-    tbody.innerHTML += `<tr>
-      <td class="num" style="color:var(--text-secondary);">${t.date}</td>
-      <td><span class="tag ${typeClass}">${t.type}</span></td>
-      <td style="font-weight:500;">${t.category||'Self Transfer'} <span style="font-size:11px; color:var(--accent); display:block; font-weight:400; margin-top:2px;">[${accName}]</span></td>
-      <td class="right num ${t.type==='income'?'pos':(t.type==='expense'?'neg':'')}" style="font-weight:600;">${displayAmt}${fmt(t.amount)}</td>
-      <td style="color:var(--text-secondary);">${t.note||'-'}</td>
-      <td class="right"><button class="icon-btn" onclick="openTxnModal('${t.id}')">✎</button> <button class="icon-btn" onclick="deleteTxn('${t.id}')">✕</button></td>
-    </tr>`;
+    tbody.innerHTML += `<tr><td class="num" style="color:var(--text-secondary);">${t.date}</td><td><span class="tag ${typeClass}">${t.type}</span></td><td style="font-weight:500;">${t.category||'Self Transfer'} <span style="font-size:11px; color:var(--accent); display:block; font-weight:400; margin-top:2px;">[${accName}]</span></td><td class="right num ${t.type==='income'?'pos':(t.type==='expense'?'neg':'')}" style="font-weight:600;">${displayAmt}${fmt(t.amount)}</td><td style="color:var(--text-secondary);">${t.note||'-'}</td><td class="right"><button class="icon-btn" onclick="openTxnModal('${t.id}')">✎</button> <button class="icon-btn" onclick="deleteTxn('${t.id}')">✕</button></td></tr>`;
   });
 }
 
 function renderDashboard(){
   const filteredTxns = txns.filter(t=>isDateInFilter(t.date));
-  const inc = filteredTxns.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-  const exp = filteredTxns.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  document.getElementById('dashIncome').textContent = fmt(inc); 
-  document.getElementById('dashExpense').textContent = fmt(exp); 
-  document.getElementById('dashSavings').textContent = fmt(inc-exp);
-  
+  const inc = filteredTxns.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0); const exp = filteredTxns.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  document.getElementById('dashIncome').textContent = fmt(inc); document.getElementById('dashExpense').textContent = fmt(exp); document.getElementById('dashSavings').textContent = fmt(inc-exp);
   let net = 0; loans.forEach(l=>{ const c=computeLedger(l); net += (l.type==='given'?1:-1)*c.total; });
   document.getElementById('dashLoanNet').textContent = fmt(Math.abs(net)); document.getElementById('dashLoanNetSub').textContent = net>=0?'You are Owed':'You Owe';
   
-  const tbody = document.getElementById('dashRecentTable'); tbody.innerHTML='';
-  filteredTxns.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5).forEach(t=>{ 
-      let displayAmt = t.type==='income'?'+':(t.type==='expense'?'-':'⇄');
-      tbody.innerHTML += `<tr><td class="num">${t.date}</td><td>${t.category||'Transfer'}</td><td class="right num ${t.type==='income'?'pos':(t.type==='expense'?'neg':'')}" style="font-weight:600;">${displayAmt}${fmt(t.amount)}</td></tr>`; 
-  });
-  if(!filteredTxns.length) tbody.innerHTML = '<tr><td colspan="3" class="empty">No transactions found in selected date range.</td></tr>';
-
-  let givenOut=0, takenOut=0;
-  const perPersonGiven = {}, perPersonTaken = {};
-  loans.forEach(l=>{
-    const c = computeLedger(l);
-    if(l.type==='given'){ givenOut += c.total; perPersonGiven[l.name] = (perPersonGiven[l.name]||0) + c.total; }
-    else{ takenOut += c.total; perPersonTaken[l.name] = (perPersonTaken[l.name]||0) + c.total; }
-  });
-  document.getElementById('dashGivenOut').textContent = fmt(givenOut);
-  document.getElementById('dashTakenOut').textContent = fmt(takenOut);
-
-  const dueInfo = getDueLists();
-  document.getElementById('dashOverdueCount').textContent = dueInfo.overdue.length;
-
-  const budgetCats = Object.keys(budgets);
-  if(budgetCats.length){
-    const totalBudget = budgetCats.reduce((s,c)=>s+budgets[c],0);
-    const totalSpent = budgetCats.reduce((s,c)=> s + filteredTxns.filter(t=>t.type==='expense'&&t.category===c).reduce((a,t)=>a+t.amount,0), 0);
-    document.getElementById('dashBudgetPct').textContent = totalBudget ? Math.round((totalSpent/totalBudget)*100)+'%' : '-';
-  } else {
-    document.getElementById('dashBudgetPct').textContent = '-';
-  }
-
-  const topGivenTb = document.getElementById('dashTopGivenTable'); topGivenTb.innerHTML='';
-  const topGiven = Object.entries(perPersonGiven).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  if(!topGiven.length) topGivenTb.innerHTML = '<tr><td class="empty">No outstanding given loans.</td></tr>';
-  topGiven.forEach(([name,amt])=>{ topGivenTb.innerHTML += `<tr><td>${name}</td><td class="right num pos" style="font-weight:600;">${fmt(amt)}</td></tr>`; });
-
-  const topTakenTb = document.getElementById('dashTopTakenTable'); topTakenTb.innerHTML='';
-  const topTaken = Object.entries(perPersonTaken).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  if(!topTaken.length) topTakenTb.innerHTML = '<tr><td class="empty">No outstanding taken loans.</td></tr>';
-  topTaken.forEach(([name,amt])=>{ topTakenTb.innerHTML += `<tr><td>${name}</td><td class="right num neg" style="font-weight:600;">${fmt(amt)}</td></tr>`; });
-
+  let givenOut=0, takenOut=0; const perPersonGiven = {}, perPersonTaken = {};
+  loans.forEach(l=>{ const c = computeLedger(l); if(l.type==='given'){ givenOut += c.total; perPersonGiven[l.name] = (perPersonGiven[l.name]||0) + c.total; } else { takenOut += c.total; perPersonTaken[l.name] = (perPersonTaken[l.name]||0) + c.total; } });
+  
+  const topGivenTb = document.getElementById('dashTopGivenTable'); topGivenTb.innerHTML=''; const topGiven = Object.entries(perPersonGiven).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  if(!topGiven.length) topGivenTb.innerHTML = '<tr><td class="empty">No outstanding given loans.</td></tr>'; topGiven.forEach(([name,amt])=>{ topGivenTb.innerHTML += `<tr><td>${name}</td><td class="right num pos" style="font-weight:600;">${fmt(amt)}</td></tr>`; });
+  const topTakenTb = document.getElementById('dashTopTakenTable'); topTakenTb.innerHTML=''; const topTaken = Object.entries(perPersonTaken).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  if(!topTaken.length) topTakenTb.innerHTML = '<tr><td class="empty">No outstanding taken loans.</td></tr>'; topTaken.forEach(([name,amt])=>{ topTakenTb.innerHTML += `<tr><td>${name}</td><td class="right num neg" style="font-weight:600;">${fmt(amt)}</td></tr>`; });
   renderDashboardCharts();
 }
 
 let dashChartMonthly=null, dashChartCategory=null;
 function renderDashboardCharts(){
-  if(typeof Chart === 'undefined') return;
-  const canvasM = document.getElementById('chartMonthly'), canvasC = document.getElementById('chartCategory');
-  if(!canvasM || !canvasC) return;
-
-  const months = [];
-  const now = new Date();
-  for(let i=5;i>=0;i--){ const d = new Date(now.getFullYear(), now.getMonth()-i, 1); months.push(d.toISOString().slice(0,7)); }
+  if(typeof Chart === 'undefined') return; const canvasM = document.getElementById('chartMonthly'), canvasC = document.getElementById('chartCategory'); if(!canvasM || !canvasC) return;
+  const months = []; const now = new Date(); for(let i=5;i>=0;i--){ const d = new Date(now.getFullYear(), now.getMonth()-i, 1); months.push(d.toISOString().slice(0,7)); }
   const monthLabels = months.map(m=>{ const [y,mo]=m.split('-'); return new Date(y,mo-1,1).toLocaleDateString('en-IN',{month:'short'}); });
   const incData = months.map(m=> txns.filter(t=>t.type==='income'&&t.date.slice(0,7)===m).reduce((s,t)=>s+t.amount,0));
   const expData = months.map(m=> txns.filter(t=>t.type==='expense'&&t.date.slice(0,7)===m).reduce((s,t)=>s+t.amount,0));
-
   if(dashChartMonthly) dashChartMonthly.destroy();
-  dashChartMonthly = new Chart(canvasM, {
-    type:'bar',
-    data:{ labels:monthLabels, datasets:[
-      {label:'Income', data:incData, backgroundColor:'#2E7D4F', borderRadius:5},
-      {label:'Expense', data:expData, backgroundColor:'#B0432E', borderRadius:5}
-    ]},
-    options:{responsive:true, maintainAspectRatio: false, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true}}}
-  });
-
-  const filterCat = document.getElementById('globalDateFilter').value;
-  let dStart, dEnd;
-  const today = new Date();
-  const catMap = {};
-  txns.filter(t=>isDateInFilter(t.date) && t.type==='expense').forEach(t=> catMap[t.category]=(catMap[t.category]||0)+t.amount);
-  const cats = Object.keys(catMap);
+  dashChartMonthly = new Chart(canvasM, { type:'bar', data:{ labels:monthLabels, datasets:[ {label:'Income', data:incData, backgroundColor:'#2E7D4F', borderRadius:5}, {label:'Expense', data:expData, backgroundColor:'#B0432E', borderRadius:5} ]}, options:{responsive:true, maintainAspectRatio: false, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true}}}});
+  const catMap = {}; txns.filter(t=>isDateInFilter(t.date) && t.type==='expense').forEach(t=> catMap[t.category]=(catMap[t.category]||0)+t.amount); const cats = Object.keys(catMap);
   if(dashChartCategory) dashChartCategory.destroy();
-  dashChartCategory = new Chart(canvasC, {
-    type:'doughnut',
-    data:{ labels: cats.length?cats:['No data'],
-      datasets:[{ data: cats.length?cats.map(c=>catMap[c]):[1],
-        backgroundColor:['#0F5257','#C08A2E','#B0432E','#3B4E9E','#8A5A00','#5B6660','#2E7D4F','#A8791F'] }]},
-    options:{responsive:true, maintainAspectRatio: false, plugins:{legend:{position:'bottom', labels:{boxWidth:12}}}}
-  });
+  dashChartCategory = new Chart(canvasC, { type:'doughnut', data:{ labels: cats.length?cats:['No data'], datasets:[{ data: cats.length?cats.map(c=>catMap[c]):[1], backgroundColor:['#0F5257','#C08A2E','#B0432E','#3B4E9E','#8A5A00','#5B6660','#2E7D4F','#A8791F'] }]}, options:{responsive:true, maintainAspectRatio: false, plugins:{legend:{position:'bottom', labels:{boxWidth:12}}}}});
 }
 
 function renderBudget(){
-    const panel = document.getElementById('budgetPanel'); panel.innerHTML=''; 
-    if(Object.keys(budgets).length === 0) { panel.innerHTML = '<div class="empty">No limits allocated.</div>'; return; }
-    Object.keys(budgets).forEach(c=>{
-        const spent = txns.filter(t=>isDateInFilter(t.date) && t.type==='expense'&&t.category===c).reduce((s,t)=>s+t.amount,0);
-        const pct = Math.min(100, (spent/budgets[c])*100);
-        panel.innerHTML += `<div style="margin-bottom:20px;"><div style="display:flex; justify-content:space-between; margin-bottom:8px; font-weight:500;"><span>${c}</span><span class="num">${fmt(spent)} <span style="color:var(--text-secondary);">/ ${fmt(budgets[c])}</span> <button class="icon-btn" style="width:24px;height:24px;" onclick="deleteBudget('${c}')">✕</button></span></div><div style="height:10px; background:var(--bg); border:1px solid var(--border); border-radius:50px; overflow:hidden;"><div style="height:100%; width:${pct}%; background:var(--${pct>80?'red':'accent'}); border-radius:50px;"></div></div></div>`;
-    });
+    const panel = document.getElementById('budgetPanel'); panel.innerHTML=''; if(Object.keys(budgets).length === 0) { panel.innerHTML = '<div class="empty">No limits allocated.</div>'; return; }
+    Object.keys(budgets).forEach(c=>{ const spent = txns.filter(t=>isDateInFilter(t.date) && t.type==='expense'&&t.category===c).reduce((s,t)=>s+t.amount,0); const pct = Math.min(100, (spent/budgets[c])*100); panel.innerHTML += `<div style="margin-bottom:20px;"><div style="display:flex; justify-content:space-between; margin-bottom:8px; font-weight:500;"><span>${c}</span><span class="num">${fmt(spent)} <span style="color:var(--text-secondary);">/ ${fmt(budgets[c])}</span> <button class="icon-btn" style="width:24px;height:24px;" onclick="deleteBudget('${c}')">✕</button></span></div><div style="height:10px; background:var(--bg); border:1px solid var(--border); border-radius:50px; overflow:hidden;"><div style="height:100%; width:${pct}%; background:var(--${pct>80?'red':'accent'}); border-radius:50px;"></div></div></div>`; });
 }
 
-function setTxnType(t){ 
-    document.getElementById('txnType').value=t; 
-    document.querySelectorAll('#txnOverlay .seg button').forEach(b=>b.classList.toggle('on', b.dataset.val===t)); 
-    if(t==='transfer'){
-        document.getElementById('txnStandardFields').style.display='none';
-        document.getElementById('txnTransferFields').style.display='block';
-    }else{
-        document.getElementById('txnStandardFields').style.display='block';
-        document.getElementById('txnTransferFields').style.display='none';
-    }
-}
-
-function openTxnModal(id){
-  document.getElementById('txnId').value = id||'';
-  populateAccountDropdowns();
-  
-  if(id){ 
-      const t = txns.find(x=>x.id===id); 
-      ['Amount','Date','Category','Note'].forEach(k=> document.getElementById('txn'+k).value=t[k.toLowerCase()]); 
-      setTxnType(t.type); 
-      if(t.type==='transfer'){
-          document.getElementById('txnFromAccount').value = t.fromAccountId;
-          document.getElementById('txnToAccount').value = t.toAccountId;
-      }else{
-          document.getElementById('txnAccount').value = t.accountId;
-      }
-  }
-  else { 
-      ['Amount','Category','Note'].forEach(k=> document.getElementById('txn'+k).value=''); 
-      setTxnType('expense'); document.getElementById('txnDate').value=todayStr(); 
-  }
-  openModal('txnOverlay');
-}
-
-function saveTxn(){
-  const type = document.getElementById('txnType').value;
-  const amount = parseFloat(document.getElementById('txnAmount').value);
-  if(!amount || amount<=0) return showToast('Enter valid amount');
-
-  const obj = { id: document.getElementById('txnId').value||uid(), type, amount, date: document.getElementById('txnDate').value||todayStr(), note: document.getElementById('txnNote').value };
-  
-  if(type === 'transfer'){
-      obj.fromAccountId = document.getElementById('txnFromAccount').value;
-      obj.toAccountId = document.getElementById('txnToAccount').value;
-      if(obj.fromAccountId === obj.toAccountId) return showToast('Select different accounts');
-  } else {
-      obj.category = document.getElementById('txnCategory').value || 'Other';
-      obj.accountId = document.getElementById('txnAccount').value;
-  }
-  
-  txns = txns.filter(x=>x.id!==obj.id);
-  txns.push(obj); saveAll(); closeModal('txnOverlay'); showToast('Transaction verified');
-}
+function setTxnType(t){ document.getElementById('txnType').value=t; document.querySelectorAll('#txnOverlay .seg button').forEach(b=>b.classList.toggle('on', b.dataset.val===t)); if(t==='transfer'){ document.getElementById('txnStandardFields').style.display='none'; document.getElementById('txnTransferFields').style.display='block'; }else{ document.getElementById('txnStandardFields').style.display='block'; document.getElementById('txnTransferFields').style.display='none'; } }
+function openTxnModal(id){ document.getElementById('txnId').value = id||''; populateAccountDropdowns(); if(id){ const t = txns.find(x=>x.id===id); ['Amount','Date','Category','Note'].forEach(k=> document.getElementById('txn'+k).value=t[k.toLowerCase()]||''); setTxnType(t.type); if(t.type==='transfer'){ document.getElementById('txnFromAccount').value = t.fromAccountId; document.getElementById('txnToAccount').value = t.toAccountId; }else{ document.getElementById('txnAccount').value = t.accountId; } } else { ['Amount','Category','Note'].forEach(k=> document.getElementById('txn'+k).value=''); setTxnType('expense'); document.getElementById('txnDate').value=todayStr(); } openModal('txnOverlay'); }
+function saveTxn(){ const type = document.getElementById('txnType').value; const amount = parseFloat(document.getElementById('txnAmount').value); if(!amount || amount<=0) return showToast('Enter valid amount'); const obj = { id: document.getElementById('txnId').value||uid(), type, amount, date: document.getElementById('txnDate').value||todayStr(), note: document.getElementById('txnNote').value }; if(type === 'transfer'){ obj.fromAccountId = document.getElementById('txnFromAccount').value; obj.toAccountId = document.getElementById('txnToAccount').value; if(obj.fromAccountId === obj.toAccountId) return showToast('Select different accounts'); } else { obj.category = document.getElementById('txnCategory').value || 'Other'; obj.accountId = document.getElementById('txnAccount').value; } txns = txns.filter(x=>x.id!==obj.id); txns.push(obj); saveAll(); closeModal('txnOverlay'); showToast('Transaction verified'); }
 function deleteTxn(id){ if(confirm('Delete transaction?')){ txns=txns.filter(x=>x.id!==id); saveAll(); } }
 
-// Modals Rest
-function setLoanType(t){ document.getElementById('loanType').value=t; document.querySelectorAll('#loanOverlay .seg button').forEach(b=>b.classList.toggle('on', b.dataset.val===t)); }
-function setPaymentType(t){ document.getElementById('paymentType').value=t; document.querySelectorAll('#ledgerOverlay .seg button').forEach(b=>b.classList.toggle('on', b.dataset.val===t)); }
+function openLoanModal(id){ document.getElementById('loanId').value = id||''; if(id){ const l = loans.find(x=>x.id===id); ['Name','Amount','Rate','Date','ReturnDate'].forEach(k=> document.getElementById('loan'+k).value=l[k.toLowerCase()]); setLoanType(l.type); } else { ['Name','Amount','Rate'].forEach(k=> document.getElementById('loan'+k).value=''); setLoanType('given'); document.getElementById('loanDate').value=todayStr(); document.getElementById('loanReturnDate').value=todayStr(); } openModal('loanOverlay'); }
+function saveLoan(){ const id=document.getElementById('loanId').value||uid(); const obj = {id, name:document.getElementById('loanName').value, type:document.getElementById('loanType').value, amount:parseFloat(document.getElementById('loanAmount').value), rate:parseFloat(document.getElementById('loanRate').value), date:document.getElementById('loanDate').value, returnDate:document.getElementById('loanReturnDate').value, status:'Pending'}; loans = loans.filter(x=>x.id!==id); loans.push(obj); saveAll(); closeModal('loanOverlay'); showToast('Loan saved'); }
+function deleteLoan(id){ if(confirm('Delete record?')){ loans=loans.filter(x=>x.id!==id); saveAll(); } }
 
-function openLoanModal(id){
-  document.getElementById('loanId').value = id||'';
-  if(id){ const l = loans.find(x=>x.id===id); ['Name','Amount','Rate','Date','ReturnDate'].forEach(k=> document.getElementById('loan'+k).value=l[k.toLowerCase()]); setLoanType(l.type); }
-  else { ['Name','Amount','Rate'].forEach(k=> document.getElementById('loan'+k).value=''); setLoanType('given'); document.getElementById('loanDate').value=todayStr(); document.getElementById('loanReturnDate').value=todayStr(); }
-  openModal('loanOverlay');
-}
-function saveLoan(){
-  const id=document.getElementById('loanId').value||uid();
-  const obj = {id, name:document.getElementById('loanName').value, type:document.getElementById('loanType').value, amount:parseFloat(document.getElementById('loanAmount').value), rate:parseFloat(document.getElementById('loanRate').value), date:document.getElementById('loanDate').value, returnDate:document.getElementById('loanReturnDate').value, status:'Pending'};
-  loans = loans.filter(x=>x.id!==id); loans.push(obj); saveAll(); closeModal('loanOverlay'); showToast('Loan saved');
-}
-function deleteLoan(id){ if(confirm('Delete execution layer?')){ loans=loans.filter(x=>x.id!==id); saveAll(); } }
-
-function openBudgetModal(){ document.getElementById('budgetCategory').value=''; document.getElementById('budgetAmount').value=''; openModal('budgetOverlay'); }
 function saveBudget(){ budgets[document.getElementById('budgetCategory').value] = parseFloat(document.getElementById('budgetAmount').value); saveAll(); closeModal('budgetOverlay'); }
 function deleteBudget(c){ delete budgets[c]; saveAll(); }
 
-function openLedgerModal(id){
-  currentLedgerLoanId = id; const l = loans.find(x=>x.id===id); 
-  if(!l) return;
-  document.getElementById('ledgerTitle').textContent = `Manage: ${l.name}`;
-  const btn = document.getElementById('paymentTypeInterestBtn');
-  if(btn) btn.textContent = l.type==='given' ? 'Interest Received' : 'Interest Paid';
-  document.getElementById('paymentAmount').value=''; document.getElementById('paymentDate').value=todayStr(); setPaymentType('interest'); renderLedger(); openModal('ledgerOverlay');
-}
-function renderLedger(){
-  const l = loans.find(x=>x.id===currentLedgerLoanId); const c = computeLedger(l);
-  const interestLabel = l.type==='given' ? 'Interest Receivable' : 'Interest Payable';
-  document.getElementById('ledgerSummaryCards').innerHTML = `<div style="flex:1;text-align:center;">Outstanding Principal<br><span class="num" style="font-size:20px;">${fmt(c.outstandingPrincipal)}</span></div> <div style="flex:1;text-align:center;">${interestLabel}<br><span class="num" style="font-size:20px;">${fmt(c.interest)}</span></div>`;
-  const tb = document.getElementById('ledgerPaymentsTable'); tb.innerHTML='';
-  if(!(l.payments||[]).length) tb.innerHTML='<tr><td colspan="4" class="empty">Zero balance allocation history.</td></tr>';
-  (l.payments||[]).forEach(p=>{
-    const typeLabel = p.type==='interest' ? (l.type==='given'?'Interest Received':'Interest Paid') : 'Principal';
-    tb.innerHTML+=`<tr><td class="num">${p.date}</td><td><span class="tag">${typeLabel}</span></td><td class="right num" style="font-weight:600;">${fmt(p.amount)}</td><td class="right print-hide"><button class="icon-btn" onclick="deletePayment('${p.id}')">✕</button></td></tr>`;
-  });
-}
-function savePayment(){
-  const l = loans.find(x=>x.id===currentLedgerLoanId), amount = parseFloat(document.getElementById('paymentAmount').value);
-  if(!l || !amount || amount<=0) return showToast('Invalid input data volume');
-  if(!l.payments) l.payments = []; l.payments.push({ id: uid(), type: document.getElementById('paymentType').value, amount, date: document.getElementById('paymentDate').value||todayStr() });
-  
-  const c = computeLedger(l); if(c.outstandingPrincipal <= 0 && c.interest <= 0) l.status = 'Paid'; else l.status = 'Partial';
-  saveAll(); renderLedger(); showToast('Repayment verified cleanly');
-}
+function openLedgerModal(id){ currentLedgerLoanId = id; const l = loans.find(x=>x.id===id); if(!l) return; document.getElementById('ledgerTitle').textContent = `Manage: ${l.name}`; const btn = document.getElementById('paymentTypeInterestBtn'); if(btn) btn.textContent = l.type==='given' ? 'Interest Received' : 'Interest Paid'; document.getElementById('paymentAmount').value=''; document.getElementById('paymentDate').value=todayStr(); setPaymentType('interest'); renderLedger(); openModal('ledgerOverlay'); }
+function renderLedger(){ const l = loans.find(x=>x.id===currentLedgerLoanId); const c = computeLedger(l); const interestLabel = l.type==='given' ? 'Interest Receivable' : 'Interest Payable'; document.getElementById('ledgerSummaryCards').innerHTML = `<div style="flex:1;text-align:center;">Outstanding Principal<br><span class="num" style="font-size:20px;">${fmt(c.outstandingPrincipal)}</span></div> <div style="flex:1;text-align:center;">${interestLabel}<br><span class="num" style="font-size:20px;">${fmt(c.interest)}</span></div>`; const tb = document.getElementById('ledgerPaymentsTable'); tb.innerHTML=''; if(!(l.payments||[]).length) tb.innerHTML='<tr><td colspan="4" class="empty">Zero balance allocation history.</td></tr>'; (l.payments||[]).forEach(p=>{ const typeLabel = p.type==='interest' ? (l.type==='given'?'Interest Received':'Interest Paid') : 'Principal'; tb.innerHTML+=`<tr><td class="num">${p.date}</td><td><span class="tag">${typeLabel}</span></td><td class="right num" style="font-weight:600;">${fmt(p.amount)}</td><td class="right print-hide"><button class="icon-btn" onclick="deletePayment('${p.id}')">✕</button></td></tr>`; }); }
+function savePayment(){ const l = loans.find(x=>x.id===currentLedgerLoanId), amount = parseFloat(document.getElementById('paymentAmount').value); if(!l || !amount || amount<=0) return showToast('Invalid input data volume'); if(!l.payments) l.payments = []; l.payments.push({ id: uid(), type: document.getElementById('paymentType').value, amount, date: document.getElementById('paymentDate').value||todayStr() }); const c = computeLedger(l); if(c.outstandingPrincipal <= 0 && c.interest <= 0) l.status = 'Paid'; else l.status = 'Partial'; saveAll(); renderLedger(); showToast('Repayment verified cleanly'); }
 function deletePayment(id){ const l = loans.find(x=>x.id===currentLedgerLoanId); l.payments=l.payments.filter(x=>x.id!==id); const c = computeLedger(l); l.status=(l.payments.length===0)?'Pending':(c.outstandingPrincipal<=0&&c.interest<=0?'Paid':'Partial'); saveAll(); renderLedger(); }
 
-// ---------------- Reminders & Alerts Matrix ----------------
-function getDueLists(){
-  const today = todayStr(); const overdue = [], dueSoon = [];
-  loans.forEach(l=>{
-    if(l.status === 'Paid') return; const due = l.returnDate || l.date;
-    if(due < today) overdue.push({l, daysOver: daysBetween(due, today)});
-    else if(due >= today && daysBetween(today, due) <= 7) dueSoon.push({l, daysLeft: daysBetween(today, due)});
-  });
-  return {overdue: overdue.sort((a,b)=>b.daysOver-a.daysOver), dueSoon: dueSoon.sort((a,b)=>a.daysLeft-b.daysLeft)};
-}
-function renderReminders(){
-  const {overdue, dueSoon} = getDueLists(); const ot = document.getElementById('overdueTable'); ot.innerHTML='';
-  if(!overdue.length) ot.innerHTML='<tr><td colspan="6" class="empty">Zero clear overdue accounts</td></tr>';
-  overdue.forEach(({l,daysOver})=>{ ot.innerHTML += `<tr onclick="openLoanModal('${l.id}')"><td><div style="font-weight:600;">${l.name}</div></td><td class="right num">${fmt(l.amount)}</td><td class="right num" style="color:var(--red);font-weight:700;">${daysOver}d</td></tr>`; });
-  const dt = document.getElementById('dueSoonTable'); dt.innerHTML='';
-  if(!dueSoon.length) dt.innerHTML='<tr><td colspan="6" class="empty">Zero near-term deadlines.</td></tr>';
-  dueSoon.forEach(({l,daysLeft})=>{ dt.innerHTML += `<tr onclick="openLoanModal('${l.id}')"><td><div style="font-weight:600;">${l.name}</div></td><td class="right num">${fmt(l.amount)}</td><td class="right num" style="color:var(--accent);font-weight:700;">${daysLeft===0?'Today':daysLeft+'d'}</td></tr>`; });
-}
-function updateReminderBadge(){
-  const {overdue, dueSoon} = getDueLists(); const total = overdue.length + dueSoon.length;
-  const topBadge = document.getElementById('badgeTop'); const botBadge = document.getElementById('badgeBottom');
-  if(topBadge) { topBadge.style.display = total ? 'inline-block' : 'none'; topBadge.textContent = total; }
-  if(botBadge) { botBadge.style.display = total ? 'inline-block' : 'none'; botBadge.textContent = total; }
-}
-function requestNotifyPermission(){ Notification.requestPermission().then(p=>showToast(p==='granted'?'System notifications online':'Permission denied')); }
+function renderPeople(){ const container = document.getElementById('peopleCards'); if(!container) return; container.innerHTML = ''; const names = [...new Set(loans.map(l=>l.name))]; if(!names.length) { container.innerHTML = '<div class="empty gu" style="grid-column: 1/-1;">No people found.</div>'; return; } names.forEach(name=>{ let givenAmt=0, takenAmt=0; loans.filter(l=>l.name===name).forEach(l=>{ const c = computeLedger(l); if(l.type==='given') givenAmt+=c.total; else takenAmt+=c.total; }); const net = givenAmt - takenAmt; container.innerHTML += `<div class="card" style="cursor:pointer; padding:20px;" onclick="openPersonDetail('${name}')"><h3 style="margin:0 0 16px 0; color:var(--accent); font-size:18px;">${name}</h3><div style="display:flex; justify-content:space-between; margin-bottom:12px;"><div><div style="font-size:11px; color:var(--text-secondary);">Owed to You</div><div class="num pos">${fmt(givenAmt)}</div></div><div style="text-align:right;"><div style="font-size:11px; color:var(--text-secondary);">You Owe</div><div class="num neg">${fmt(takenAmt)}</div></div></div><div style="border-top:1px solid var(--border); padding-top:12px; display:flex; justify-content:space-between; align-items:center;"><div style="font-size:12px; font-weight:600;">NET</div><div class="num ${net>=0?'pos':'neg'}">${fmt(Math.abs(net))} ${net>=0?'(Recv)':'(Pay)'}</div></div></div>`; });}
+function openPersonDetail(name){ currentPersonView = name; document.getElementById('personModalName').textContent = `Transactions: ${name}`; const tbody = document.getElementById('personEntriesTable'); tbody.innerHTML = ''; loans.filter(l=>l.name===name).sort((a,b)=>new Date(b.date)-new Date(a.date)).forEach(l=>{ const c = computeLedger(l); tbody.innerHTML += `<tr style="cursor:pointer;" onclick="if(!event.target.closest('button')) { closeModal('personOverlay'); openLedgerModal('${l.id}'); }"><td><span class="tag ${l.type==='given'?'tag-given':'tag-taken'}">${l.type}</span></td><td class="right num">${fmt(l.amount)}</td><td class="num">${l.date}</td><td class="right num" style="font-weight:700;">${fmt(c.total)}</td><td class="right"><button class="icon-btn" onclick="closeModal('personOverlay');openLoanModal('${l.id}')">✎</button></td></tr>`; }); openModal('personOverlay'); }
+function addEntryForPerson(){ const name=currentPersonView; closeModal('personOverlay'); openLoanModal(); document.getElementById('loanName').value=name; }
+function switchLoanTab(tab) { document.getElementById('btn-tab-entries').classList.toggle('on', tab === 'entries'); document.getElementById('btn-tab-people').classList.toggle('on', tab === 'people'); document.getElementById('loans-entries').style.display = tab === 'entries' ? 'block' : 'none'; document.getElementById('loans-people').style.display = tab === 'people' ? 'block' : 'none'; if(tab === 'people') renderPeople(); }
 
-// ---------------- PROFILE & UX FIXES ----------------
-function renderProfile(){
-  const signedInDiv = document.getElementById('profileSignedIn');
-  const signedOutDiv = document.getElementById('profileSignedOut');
-  
-  if(!fbUser){ 
-      if(signedInDiv) signedInDiv.style.display='none'; 
-      if(signedOutDiv) signedOutDiv.style.display='block'; 
-      return; 
-  }
-  
-  if(signedInDiv) signedInDiv.style.display='block'; 
-  if(signedOutDiv) signedOutDiv.style.display='none';
-  
-  try {
-      // FIX: Brave browser null email error bypass
-      const name = fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'User');
-      document.getElementById('profileAvatar').textContent = name.charAt(0).toUpperCase();
-      document.getElementById('profileNameDisplay').textContent = name; 
-      document.getElementById('profileEmailDisplay').textContent = fbUser.email || 'Cloud Account';
-  } catch(e) {
-      console.error("Profile render bypass:", e);
-  }
-}
+// ---------------- ALERTS ----------------
+function updateReminderBadge(){ const dueInfo = getDueLists(); const total = dueInfo.overdue.length + dueInfo.dueSoon.length; const topBadge = document.getElementById('badgeTop'); const botBadge = document.getElementById('badgeBottom'); if(topBadge) { topBadge.style.display = total ? 'inline-block' : 'none'; topBadge.textContent = total; } if(botBadge) { botBadge.style.display = total ? 'inline-block' : 'none'; botBadge.textContent = total; } }
+function renderReminders(){ const {overdue, dueSoon} = getDueLists(); const ot = document.getElementById('overdueTable'); ot.innerHTML=''; if(!overdue.length) ot.innerHTML='<tr><td colspan="3" class="empty">Zero clear overdue accounts</td></tr>'; overdue.forEach(({l,daysOver})=>{ ot.innerHTML += `<tr><td><div style="font-weight:600;">${l.name}</div></td><td class="right num">${fmt(l.amount)}</td><td class="right num" style="color:var(--red);font-weight:700;">${daysOver}d</td></tr>`; }); const dt = document.getElementById('dueSoonTable'); dt.innerHTML=''; if(!dueSoon.length) dt.innerHTML='<tr><td colspan="3" class="empty">Zero near-term deadlines.</td></tr>'; dueSoon.forEach(({l,daysLeft})=>{ dt.innerHTML += `<tr><td><div style="font-weight:600;">${l.name}</div></td><td class="right num">${fmt(l.amount)}</td><td class="right num" style="color:var(--accent);font-weight:700;">${daysLeft===0?'Today':daysLeft+'d'}</td></tr>`; }); }
 
-function editName() {
-    const currentName = fbUser.displayName || '';
-    const newName = prompt("Enter new display name:", currentName);
-    if(newName !== null && newName.trim() !== ""){
-        if(!fbUser) return;
-        fbUser.updateProfile({displayName: newName.trim()}).then(()=>{
-            showToast('Profile name updated');
-            renderProfile();
-        }).catch(e => showToast(e.message));
-    }
-}
-
-// ---------------- CLOUD & AUTH (ROBUST MOBILE) ----------------
+// ---------------- CLOUD CORE (BRAVE BYPASS FIX) ----------------
 function initFirebase(){
   try {
-    if(typeof firebase === 'undefined'){ console.error('Firebase SDK not loaded'); return; }
+    if(typeof firebase === 'undefined') return;
     const cfg = { apiKey: "AIzaSyA3037mG-4lYelAYyJOOBlH2HMphZv3zuw", authDomain: "m-finance1.firebaseapp.com", projectId: "m-finance1" };
     if(!firebase.apps.length) fbApp = firebase.initializeApp(cfg); else fbApp = firebase.app();
     fbAuth = firebase.auth(); fbDb = firebase.firestore();
     
-    fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
-        fbAuth.onAuthStateChanged(u=>{ 
-            fbUser=u; 
-            if(u) { listenToCloud(u.uid); } 
-            else if(document.getElementById('view-profile').classList.contains('active')) { renderProfile(); }
-        });
-      }).catch((error) => console.error("Persistence error:", error));
-  } catch(e) { console.error('initFirebase failed:', e); }
+    // 1. Always bind state listener immediately
+    fbAuth.onAuthStateChanged(u=>{ 
+        fbUser=u; 
+        if(u) { listenToCloud(u.uid); } 
+        renderProfile(); // Always call this to remove blank screen
+    });
+
+    // 2. Try persistence, but ignore Brave strict blocking errors
+    fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(e => console.warn("Brave block bypassed"));
+
+  } catch(e) { console.error(e); renderProfile(); }
 }
 
 function listenToCloud(uid){
   if(fbUnsub) fbUnsub();
   fbUnsub = fbDb.collection('maro-hisab-users').doc(uid).onSnapshot(s=>{
-    if(!s.exists) return; const d=s.data();
-    if(d.appPin!==undefined){ appPin=d.appPin; localStorage.setItem('mh_app_pin',appPin); checkLock(); }
-    loans=d.loans||[]; txns=d.txns||[]; budgets=d.budgets||{}; accounts=d.accounts||accounts;
-    localStorage.setItem('mh_loans',JSON.stringify(loans)); localStorage.setItem('mh_transactions',JSON.stringify(txns)); localStorage.setItem('mh_budgets',JSON.stringify(budgets)); localStorage.setItem('mh_accounts',JSON.stringify(accounts));
-    renderAll(); if(document.getElementById('view-profile').classList.contains('active')) renderProfile();
-  });
+    if(s.exists) {
+        const d=s.data(); loans=d.loans||[]; txns=d.txns||[]; budgets=d.budgets||{}; accounts=d.accounts||accounts;
+        localStorage.setItem('mh_loans',JSON.stringify(loans)); localStorage.setItem('mh_transactions',JSON.stringify(txns)); localStorage.setItem('mh_budgets',JSON.stringify(budgets)); localStorage.setItem('mh_accounts',JSON.stringify(accounts));
+    } else {
+        fbDb.collection('maro-hisab-users').doc(uid).set({loans, txns, budgets, accounts, appPin});
+    }
+    renderAll(); renderProfile();
+  }, err => { renderProfile(); });
 }
-function pushToCloud(){ let t; clearTimeout(t); t=setTimeout(()=>{ if(fbUser && fbDb) fbDb.collection('maro-hisab-users').doc(fbUser.uid).set({loans, txns, budgets, accounts, appPin}); }, 500); }
+function pushToCloud(){ if(fbUser && fbDb) fbDb.collection('maro-hisab-users').doc(fbUser.uid).set({loans, txns, budgets, accounts, appPin}); }
 
 function doSignUp(){
-  if(!fbAuth){ showToast('Connecting to Cloud...'); initFirebase(); return; }
-  const btn = document.getElementById('btnSignUp'); btn.disabled = true; btn.textContent = "Creating...";
+  if(!fbAuth) return;
   fbAuth.createUserWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPassword').value)
-  .then(()=>{ closeModal('syncOverlay'); showToast('Account Registered & Logged In'); btn.disabled = false; btn.textContent = "Create Acct"; renderProfile(); })
-  .catch(e=>{ alert("Sign Up Error:\n" + e.message); btn.disabled = false; btn.textContent = "Create Acct"; });
+  .then(()=>{ closeModal('syncOverlay'); showToast('Account Registered'); renderProfile(); })
+  .catch(e=>alert(e.message));
 }
 function doSignIn(){
-  if(!fbAuth){ showToast('Connecting to Cloud...'); initFirebase(); return; }
-  const btn = document.getElementById('btnSignIn'); btn.disabled = true; btn.textContent = "Signing In...";
+  if(!fbAuth) return;
   fbAuth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPassword').value)
-  .then(()=>{ closeModal('syncOverlay'); showToast('Successfully Signed In'); btn.disabled = false; btn.textContent = "Sign In"; renderProfile(); })
-  .catch(e=>{ alert("Sign In Error:\n" + e.message); btn.disabled = false; btn.textContent = "Sign In"; });
+  .then(()=>{ closeModal('syncOverlay'); showToast('Signed In Successfully'); renderProfile(); })
+  .catch(e=>alert(e.message));
 }
-function doSignOut(){ 
-  if(confirm("Sign out and clear data from device?")){ 
-    if(fbAuth) fbAuth.signOut(); 
-    if(fbUnsub){ fbUnsub(); fbUnsub = null; }
-    localStorage.clear(); location.reload(); 
-  } 
+function doSignOut(){ if(confirm("Clear local cache and Sign Out?")){ if(fbAuth) fbAuth.signOut(); if(fbUnsub) fbUnsub(); localStorage.clear(); location.reload(); } }
+
+function renderProfile(){
+  const signedInDiv = document.getElementById('profileSignedIn'); const signedOutDiv = document.getElementById('profileSignedOut');
+  if(!signedInDiv || !signedOutDiv) return;
+  if(fbUser){ 
+      signedInDiv.style.display='block'; signedOutDiv.style.display='none';
+      try {
+          const name = fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'User');
+          document.getElementById('profileAvatar').textContent = name.charAt(0).toUpperCase();
+          document.getElementById('profileNameDisplay').textContent = name; 
+          document.getElementById('profileEmailDisplay').textContent = fbUser.email || 'Cloud Active';
+      } catch(e) {}
+  } else { signedInDiv.style.display='none'; signedOutDiv.style.display='block'; }
 }
 
-// Security, Theme & Init
-let appPin = localStorage.getItem('mh_app_pin')||'', enteredPin='', isSettingPin=false, tempPin='';
-function checkLock(){ document.getElementById('appLockOverlay').style.display=appPin?'flex':'none'; document.querySelectorAll('#pinText').forEach(el=>el.textContent = appPin?'Remove PIN Lock':'Set PIN Lock'); document.querySelectorAll('#pinIco').forEach(el=>el.textContent = appPin?'🔓':'🔒'); }
+function editName() { if(!fbUser) return; const n = prompt("Enter Name:", fbUser.displayName||""); if(n) fbUser.updateProfile({displayName: n.trim()}).then(()=>{ showToast('Updated'); renderProfile(); }); }
+function toggleTheme(){ const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark'; document.documentElement.setAttribute('data-theme',t); localStorage.setItem('mh_theme',t); document.querySelectorAll('#themeText').forEach(l=>l.textContent=t==='dark'?'Light Mode':'Dark Mode'); document.querySelectorAll('#themeIco').forEach(l=>l.textContent=t==='dark'?'☀️':'🌙'); if(dashChartMonthly) renderDashboardCharts(); }
+function exportData(){ const p = prompt("Backup password:"); if(!p) return; const enc = CryptoJS.AES.encrypt(JSON.stringify({loans, txns, budgets, accounts}), p).toString(); triggerDownload('MyLedger_Backup.enc', enc); showToast('Exported'); }
+function importData(e){ const f=e.target.files[0]; if(!f) return; const p = prompt("Decryption Key:"); const r = new FileReader(); r.onload=ev=>{ try{ const d=JSON.parse(CryptoJS.AES.decrypt(ev.target.result, p).toString(CryptoJS.enc.Utf8)); loans=d.loans; txns=d.txns; budgets=d.budgets; accounts=d.accounts||accounts; saveAll(); showToast("Restored Successfully!"); } catch(err){ showToast("Failed."); } }; r.readAsText(f); e.target.value=''; }
+
+// PIN Gatekeeper
+function checkLock(){ document.getElementById('appLockOverlay').style.display=appPin?'flex':'none'; }
 function updatePinUI(){ document.querySelectorAll('.pin-dot').forEach((d,i)=>d.classList.toggle('filled', i<enteredPin.length)); }
 function pinPress(n){ if(enteredPin.length<4){ enteredPin+=n; updatePinUI(); if(enteredPin.length===4) setTimeout(processPin,200); } }
 function pinClear(){ enteredPin=enteredPin.slice(0,-1); updatePinUI(); }
@@ -1277,54 +946,14 @@ function processPin(){
   if(isSettingPin){
     if(!tempPin){ tempPin=enteredPin; enteredPin=''; document.getElementById('lockTitle').textContent='Confirm PIN'; updatePinUI(); }
     else if(enteredPin===tempPin){ appPin=enteredPin; localStorage.setItem('mh_app_pin',appPin); pushToCloud(); isSettingPin=false; checkLock(); showToast('PIN Secured'); }
-    else{ enteredPin=''; tempPin=''; document.getElementById('lockTitle').textContent='Set PIN'; updatePinUI(); showToast('PIN mismatch detected'); }
-  }else{
-    if(enteredPin===appPin){ document.getElementById('appLockOverlay').style.display='none'; enteredPin=''; updatePinUI(); }
-    else{ enteredPin=''; updatePinUI(); showToast('Access denied'); }
-  }
+    else{ enteredPin=''; tempPin=''; document.getElementById('lockTitle').textContent='Set PIN'; updatePinUI(); showToast('Mismatch'); }
+  }else{ if(enteredPin===appPin){ document.getElementById('appLockOverlay').style.display='none'; enteredPin=''; updatePinUI(); } else { enteredPin=''; updatePinUI(); showToast('Denied'); } }
 }
-function pinForgot(){ if(confirm('Reset PIN? This will log you out and clear local data.')){ localStorage.clear(); location.reload(); } }
-function togglePinSetup(){ if(appPin){ appPin=''; localStorage.removeItem('mh_app_pin'); pushToCloud(); checkLock(); showToast('PIN Removed'); } else{ isSettingPin=true; enteredPin=''; tempPin=''; document.getElementById('lockTitle').textContent='Set New 4-Digit PIN'; document.getElementById('appLockOverlay').style.display='flex'; updatePinUI(); } }
-
-function toggleTheme(){ 
-  const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark'; document.documentElement.setAttribute('data-theme',t); localStorage.setItem('mh_theme',t); 
-  document.querySelectorAll('#themeText').forEach(l=>l.textContent=t==='dark'?'Light Mode':'Dark Mode'); 
-  document.querySelectorAll('#themeIco').forEach(l=>l.textContent=t==='dark'?'☀️':'🌙'); 
-  if(dashChartMonthly) renderDashboardCharts(); // Redraw charts for new theme
-}
+function pinForgot(){ if(confirm('Reset Application? Local cache will clear.')){ localStorage.clear(); location.reload(); } }
+function togglePinSetup(){ if(appPin){ appPin=''; localStorage.removeItem('mh_app_pin'); pushToCloud(); checkLock(); showToast('PIN Removed'); } else{ isSettingPin=true; enteredPin=''; tempPin=''; document.getElementById('lockTitle').textContent='Set 4-Digit PIN'; document.getElementById('appLockOverlay').style.display='flex'; updatePinUI(); } }
 
 document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
 document.documentElement.setAttribute('data-theme', localStorage.getItem('mh_theme')||'dark');
-document.querySelectorAll('#themeText').forEach(l=>l.textContent=localStorage.getItem('mh_theme')==='light'?'Dark Mode':'Light Mode');
-document.querySelectorAll('#themeIco').forEach(l=>l.textContent=localStorage.getItem('mh_theme')==='light'?'🌙':'☀️');
-
-// Diagnostics Helper
-function runDiagnostics(){
-  const results = []; const assertClose = (a, e, t, l) => results.push({label:l, pass: Math.abs(a-e) <= t, actual:a, expected:e});
-  const ym = todayStr().slice(0,7);
-  const incExpected = txns.filter(t=>isDateInFilter(t.date) && t.type==='income').reduce((s,t)=>s+t.amount,0);
-  assertClose(parseFmt(document.getElementById('dashIncome').textContent), incExpected, 1, "Dash Income logic loop");
-  const expExpected = txns.filter(t=>isDateInFilter(t.date) && t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  assertClose(parseFmt(document.getElementById('dashExpense').textContent), expExpected, 1, "Dash Expense logic loop");
-  const passCount = results.filter(r=>r.pass).length;
-  document.getElementById('diagSummary').innerHTML = `<div class="card"><div class="label">Checks</div><div class="value num">${results.length}</div></div><div class="card"><div class="label" style="color:var(--green);">Passed</div><div class="value num pos">${passCount}</div></div><div class="card"><div class="label" style="color:var(--red);">Errors</div><div class="value num neg">${results.length-passCount}</div></div>`;
-  const tbody = document.getElementById('diagResultsTable'); tbody.innerHTML = ''; document.getElementById('diagEmpty').style.display = 'none';
-  results.forEach(r=>{ tbody.innerHTML += `<tr><td>${r.pass?'✅':'❌'}</td><td>${r.label}</td><td class="right num">${r.expected}</td><td class="right num">${r.actual}</td></tr>`; });
-}
-
-// Calculators
-function openCalcTool(id, title) { document.getElementById('calcCategoryGrid').style.display = 'none'; document.getElementById('activeCalcArea').style.display = 'block'; document.querySelectorAll('.calc-panel').forEach(p => p.style.display = 'none'); const panel = document.getElementById('calc-' + id); if (panel) panel.style.display = 'block'; document.getElementById('calcHubTitle').textContent = title; document.getElementById('calcBackBtn').style.display = 'inline-block'; }
-function resetCalcHub() { const grid = document.getElementById('calcCategoryGrid'); const area = document.getElementById('activeCalcArea'); const title = document.getElementById('calcHubTitle'); const btn = document.getElementById('calcBackBtn'); if (grid) grid.style.display = 'grid'; if (area) area.style.display = 'none'; if (title) title.textContent = 'Financial Calculators'; if (btn) btn.style.display = 'none'; }
-function calcSIP(){ const elP = document.getElementById('sipAmount'); if(!elP) return; const P = parseFloat(elP.value)||0; const r = parseFloat(document.getElementById('sipRate').value)||0; const y = parseFloat(document.getElementById('sipYears').value)||0; const i = (r/100)/12; const n = y*12; let totalValue = (i===0)?P*n : P * ((Math.pow(1+i, n) - 1)/i) * (1+i); document.getElementById('sipResult').innerHTML = `Invested Principal: ${fmt(P*n)}<br>Estimated Wealth Gain: ${fmt(totalValue - (P*n))}<br>Total Capital Projection: ${fmt(totalValue)}`; }
-function calcEMI(){ const elP = document.getElementById('emiAmount'); if(!elP) return; const P = parseFloat(elP.value)||0; const r = parseFloat(document.getElementById('emiRate').value)||0; const y = parseFloat(document.getElementById('emiYears').value)||0; const i = (r/100)/12; const n = y*12; let emi = (i===0)?P/n : P * i * Math.pow(1+i,n) / (Math.pow(1+i,n)-1); document.getElementById('emiResult').innerHTML = `Monthly Installment EMI: ${fmt(emi)}<br>Total Bank Interest Flow: ${fmt((emi*n)-P)}<br>Aggregate Liability Payout: ${fmt(emi*n)}`; }
-function calcGST(){ const amt = parseFloat(document.getElementById('gstAmount').value)||0; const rate = parseFloat(document.getElementById('gstRate').value)||0; const type = document.getElementById('gstType').value; let gst = (type==='add')?amt*(rate/100) : amt - (amt * (100/(100+rate))); document.getElementById('gstResult').innerHTML = `Net Base Capital: ${fmt((type==='add')?amt:amt-gst)}<br>Tax Volume Split (GST): ${fmt(gst)}<br>Consolidated Volume: ${fmt((type==='add')?amt+gst:amt)}`; }
-function calcSI(){ const P = parseFloat(document.getElementById('siAmount').value)||0; const R = parseFloat(document.getElementById('siRate').value)||0; const T = parseFloat(document.getElementById('siTime').value)||0; const type = document.getElementById('siType').value; let years = T; if(type==='months') years = T/12; if(type==='days') years = T/365; const si = P * (R/100) * years; document.getElementById('siResult').innerHTML = `Earned Interest: ${fmt(si)}<br>Total Final Amount: ${fmt(P+si)}`; }
-function calcPct(){ const val = parseFloat(document.getElementById('pctBase').value)||0; const pct = parseFloat(document.getElementById('pctRate').value)||0; const res = val * (pct/100); document.getElementById('pctResult').innerHTML = `${pct}% of ${fmt(val)} is <b>${fmt(res)}</b><br>Added Total (+): ${fmt(val+res)}<br>Discounted Net (-): ${fmt(val-res)}`; }
-function calcMileage(){ const dist = parseFloat(document.getElementById('milDist').value)||0; const price = parseFloat(document.getElementById('milPrice').value)||0; const fuel = parseFloat(document.getElementById('milFuel').value)||0; const mil = fuel>0 ? (dist/fuel).toFixed(2) : 0; const cost = dist>0 ? ((fuel*price)/dist).toFixed(2) : 0; document.getElementById('milResult').innerHTML = `Vehicle Mileage: <b>${mil} km/l</b><br>Total Trip Fuel Cost: ${fmt(fuel*price)}<br>Running Cost: ₹${cost} per km`; }
-
-function exportData(){ const p = prompt("Backup password:"); if(!p) return; const enc = CryptoJS.AES.encrypt(JSON.stringify({loans, txns, budgets, accounts}), p).toString(); triggerDownload('MyLedger_Backup.enc', enc); showToast('Encrypted Export Downloaded'); }
-function importData(e){ const f=e.target.files[0]; if(!f) return; const p = prompt("Backup decryption key:"); const r = new FileReader(); r.onload=ev=>{ try{ const d=JSON.parse(CryptoJS.AES.decrypt(ev.target.result, p).toString(CryptoJS.enc.Utf8)); loans=d.loans; txns=d.txns; budgets=d.budgets; accounts=d.accounts||accounts; saveAll(); showToast("Vault state verified & restored!"); } catch(err){ showToast("Key verification failed."); } }; r.readAsText(f); e.target.value=''; }
-
 loadAll(); checkLock();
 setTimeout(()=>{ if(!fbAuth) initFirebase(); }, 1500);
 </script>
