@@ -365,11 +365,53 @@
           <div class="card" onclick="openCalcTool('sip', 'SIP Calculator')"><div class="label">Investment</div><div class="value" style="font-size:18px;">SIP Calc</div></div>
           <div class="card" onclick="openCalcTool('emi', 'EMI Simulator')"><div class="label">Banking</div><div class="value" style="font-size:18px;">EMI Calc</div></div>
           <div class="card" onclick="openCalcTool('gst', 'GST Splitter')"><div class="label">Business</div><div class="value" style="font-size:18px;">GST Calc</div></div>
+          <div class="card" onclick="openCalcTool('si', 'Simple Interest')"><div class="label">Finance</div><div class="value" style="font-size:18px;">Simple Interest</div></div>
+          <div class="card" onclick="openCalcTool('pct', 'Percentage Calculator')"><div class="label">Math</div><div class="value" style="font-size:18px;">Percentage</div></div>
+          <div class="card" onclick="openCalcTool('mil', 'Mileage & Trip Cost')"><div class="label">Auto</div><div class="value" style="font-size:18px;">Mileage Cost</div></div>
       </div>
       <div id="activeCalcArea" style="display:none; max-width: 600px;">
-        <div id="calc-sip" class="panel calc-panel" style="display:none;"> <div class="field"><label>Monthly Investment (₹)</label><input type="number" id="sipAmount" value="5000" oninput="calcSIP()"></div> <div id="sipResult" class="num"></div> </div>
-        <div id="calc-emi" class="panel calc-panel" style="display:none;"> <div class="field"><label>Loan Amount (₹)</label><input type="number" id="emiAmount" value="500000" oninput="calcEMI()"></div> <div id="emiResult" class="num"></div> </div>
-        <div id="calc-gst" class="panel calc-panel" style="display:none;"> <div class="field"><label>Amount (₹)</label><input type="number" id="gstAmount" value="10000" oninput="calcGST()"></div> <div id="gstResult" class="num"></div> </div>
+        <div id="calc-sip" class="panel calc-panel" style="display:none;">
+          <div class="field"><label>Monthly Investment (₹)</label><input type="number" id="sipAmount" value="5000" oninput="calcSIP()"></div>
+          <div class="field"><label>Expected Return Rate (% p.a.)</label><input type="number" id="sipRate" value="12" oninput="calcSIP()"></div>
+          <div class="field"><label>Duration (Years)</label><input type="number" id="sipYears" value="10" oninput="calcSIP()"></div>
+          <div id="sipResult" class="num" style="margin-top:12px; font-weight:600; line-height:1.8;"></div>
+        </div>
+        <div id="calc-emi" class="panel calc-panel" style="display:none;">
+          <div class="field"><label>Loan Amount (₹)</label><input type="number" id="emiAmount" value="500000" oninput="calcEMI()"></div>
+          <div class="field"><label>Interest Rate (% p.a.)</label><input type="number" id="emiRate" value="9" oninput="calcEMI()"></div>
+          <div class="field"><label>Tenure (Years)</label><input type="number" id="emiYears" value="5" oninput="calcEMI()"></div>
+          <div id="emiResult" class="num" style="margin-top:12px; font-weight:600; line-height:1.8;"></div>
+        </div>
+        <div id="calc-gst" class="panel calc-panel" style="display:none;">
+          <div class="field"><label>Amount (₹)</label><input type="number" id="gstAmount" value="10000" oninput="calcGST()"></div>
+          <div class="field"><label>GST Rate (%)</label>
+            <select id="gstRate" onchange="calcGST()"><option value="5">5%</option><option value="12">12%</option><option value="18" selected>18%</option><option value="28">28%</option></select>
+          </div>
+          <div class="field"><label>Mode</label>
+            <select id="gstType" onchange="calcGST()"><option value="add">Add GST (+)</option><option value="remove">Remove GST (Inclusive)</option></select>
+          </div>
+          <div id="gstResult" class="num" style="margin-top:12px; font-weight:600; line-height:1.8;"></div>
+        </div>
+        <div id="calc-si" class="panel calc-panel" style="display:none;">
+          <div class="field"><label>Principal (₹)</label><input type="number" id="siAmount" value="50000" oninput="calcSI()"></div>
+          <div class="field"><label>Rate (% p.a.)</label><input type="number" id="siRate" value="2" oninput="calcSI()"></div>
+          <div class="field"><label>Time Duration</label><input type="number" id="siTime" value="6" oninput="calcSI()"></div>
+          <div class="field"><label>Time Format</label>
+            <select id="siType" onchange="calcSI()"><option value="years">Years</option><option value="months" selected>Months</option><option value="days">Days</option></select>
+          </div>
+          <div id="siResult" class="num" style="margin-top:12px; font-weight:600; line-height:1.8;"></div>
+        </div>
+        <div id="calc-pct" class="panel calc-panel" style="display:none;">
+          <div class="field"><label>Base Value</label><input type="number" id="pctBase" value="2500" oninput="calcPct()"></div>
+          <div class="field"><label>Percentage (%)</label><input type="number" id="pctRate" value="15" oninput="calcPct()"></div>
+          <div id="pctResult" class="num" style="margin-top:12px; font-weight:600; line-height:1.8;"></div>
+        </div>
+        <div id="calc-mil" class="panel calc-panel" style="display:none;">
+          <div class="field"><label>Distance (KM)</label><input type="number" id="milDist" value="300" oninput="calcMileage()"></div>
+          <div class="field"><label>Fuel Price (₹/L)</label><input type="number" id="milPrice" value="90" oninput="calcMileage()"></div>
+          <div class="field"><label>Fuel Used (Liters)</label><input type="number" id="milFuel" value="15" oninput="calcMileage()"></div>
+          <div id="milResult" class="num" style="margin-top:12px; font-weight:600; line-height:1.8;"></div>
+        </div>
       </div>
     </section>
 
@@ -612,6 +654,8 @@
 <script>
 let loans=[], txns=[], budgets={}, accounts=[], fbApp=null, fbAuth=null, fbDb=null, fbUser=null, fbUnsub=null;
 let currentLedgerLoanId = null, currentPersonView = null, activeBankId = null;
+let appPin = localStorage.getItem('mh_app_pin') || '';
+let enteredPin = '', isSettingPin = false, tempPin = '';
 
 const fmt = n => '₹' + (Math.round((n||0)*100)/100).toLocaleString('en-IN');
 const todayStr = () => new Date().toISOString().slice(0,10);
@@ -873,6 +917,76 @@ function setPaymentType(type){
   document.querySelectorAll('#ledgerOverlay .seg button').forEach(b=> b.classList.toggle('on', b.dataset.val===type));
 }
 function daysAgoStr(n){ const d = new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
+
+/* ---------------- FINANCIAL CALCULATOR HUB ---------------- */
+function openCalcTool(id, title){
+  document.getElementById('calcCategoryGrid').style.display = 'none';
+  document.getElementById('activeCalcArea').style.display = 'block';
+  document.querySelectorAll('.calc-panel').forEach(p=>p.style.display='none');
+  document.getElementById('calc-'+id).style.display = 'block';
+  document.getElementById('calcHubTitle').textContent = title;
+  document.getElementById('calcBackBtn').style.display = 'inline-block';
+  const fns = {sip:calcSIP, emi:calcEMI, gst:calcGST, si:calcSI, pct:calcPct, mil:calcMileage};
+  if(fns[id]) fns[id]();
+}
+function resetCalcHub(){
+  document.getElementById('calcCategoryGrid').style.display = 'grid';
+  document.getElementById('activeCalcArea').style.display = 'none';
+  document.getElementById('calcHubTitle').textContent = 'Financial Calculators';
+  document.getElementById('calcBackBtn').style.display = 'none';
+}
+function calcSIP(){
+  const P = parseFloat(document.getElementById('sipAmount').value)||0;
+  const r = parseFloat(document.getElementById('sipRate').value)||0;
+  const y = parseFloat(document.getElementById('sipYears').value)||0;
+  const i = (r/100)/12, n = y*12;
+  const totalValue = (i===0) ? P*n : P * ((Math.pow(1+i,n)-1)/i) * (1+i);
+  document.getElementById('sipResult').innerHTML =
+    `Invested Principal: ${fmt(P*n)}<br>Estimated Wealth Gain: ${fmt(totalValue-(P*n))}<br>Total Capital Projection: ${fmt(totalValue)}`;
+}
+function calcEMI(){
+  const P = parseFloat(document.getElementById('emiAmount').value)||0;
+  const r = parseFloat(document.getElementById('emiRate').value)||0;
+  const y = parseFloat(document.getElementById('emiYears').value)||0;
+  const i = (r/100)/12, n = y*12;
+  const emi = (i===0) ? P/n : P * i * Math.pow(1+i,n) / (Math.pow(1+i,n)-1);
+  document.getElementById('emiResult').innerHTML =
+    `Monthly EMI: ${fmt(emi)}<br>Total Interest Payable: ${fmt((emi*n)-P)}<br>Total Payment: ${fmt(emi*n)}`;
+}
+function calcGST(){
+  const amt = parseFloat(document.getElementById('gstAmount').value)||0;
+  const rate = parseFloat(document.getElementById('gstRate').value)||0;
+  const type = document.getElementById('gstType').value;
+  const gst = (type==='add') ? amt*(rate/100) : amt - (amt*(100/(100+rate)));
+  document.getElementById('gstResult').innerHTML =
+    `Net Base Amount: ${fmt(type==='add'?amt:amt-gst)}<br>GST Amount: ${fmt(gst)}<br>Total Amount: ${fmt(type==='add'?amt+gst:amt)}`;
+}
+function calcSI(){
+  const P = parseFloat(document.getElementById('siAmount').value)||0;
+  const R = parseFloat(document.getElementById('siRate').value)||0;
+  const T = parseFloat(document.getElementById('siTime').value)||0;
+  const type = document.getElementById('siType').value;
+  let years = T; if(type==='months') years = T/12; if(type==='days') years = T/365;
+  const si = P*(R/100)*years;
+  document.getElementById('siResult').innerHTML = `Interest Earned: ${fmt(si)}<br>Total Final Amount: ${fmt(P+si)}`;
+}
+function calcPct(){
+  const val = parseFloat(document.getElementById('pctBase').value)||0;
+  const pct = parseFloat(document.getElementById('pctRate').value)||0;
+  const res = val*(pct/100);
+  document.getElementById('pctResult').innerHTML =
+    `${pct}% of ${fmt(val)} is <b>${fmt(res)}</b><br>Added Total (+): ${fmt(val+res)}<br>Discounted Total (−): ${fmt(val-res)}`;
+}
+function calcMileage(){
+  const dist = parseFloat(document.getElementById('milDist').value)||0;
+  const price = parseFloat(document.getElementById('milPrice').value)||0;
+  const fuel = parseFloat(document.getElementById('milFuel').value)||0;
+  const mil = fuel>0 ? (dist/fuel).toFixed(2) : 0;
+  const cost = dist>0 ? ((fuel*price)/dist).toFixed(2) : 0;
+  document.getElementById('milResult').innerHTML =
+    `Mileage: <b>${mil} km/l</b><br>Total Trip Fuel Cost: ${fmt(fuel*price)}<br>Running Cost: ₹${cost} per km`;
+}
+
 function runDiagnostics(){
   const results = [];
   const assertClose = (actual, expected, tol, label) => results.push({label, pass: Math.abs(actual-expected) <= tol, actual, expected});
@@ -1073,7 +1187,6 @@ function processPin(){
 function pinForgot(){ if(confirm('Reset Application? Local cache will clear.')){ localStorage.clear(); location.reload(); } }
 function togglePinSetup(){ if(appPin){ appPin=''; localStorage.removeItem('mh_app_pin'); pushToCloud(); checkLock(); showToast('PIN Removed'); } else{ isSettingPin=true; enteredPin=''; tempPin=''; document.getElementById('lockTitle').textContent='Set 4-Digit PIN'; document.getElementById('appLockOverlay').style.display='flex'; updatePinUI(); } }
 
-document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
 document.documentElement.setAttribute('data-theme', localStorage.getItem('mh_theme')||'dark');
 loadAll(); checkLock();
 setTimeout(()=>{ if(!fbAuth) initFirebase(); }, 1500);
