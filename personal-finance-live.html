@@ -142,6 +142,7 @@
 
   #appLockOverlay { background: var(--bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
   .mobile-nav { display: none; }
+  @media (min-width: 801px) { .mobile-nav { display: none !important; } }
   .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); background: var(--surface); transition: 0.2s; }
   .pin-dot.filled { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); transform: scale(1.2); }
   .pin-pad { display: grid; grid-template-columns: repeat(3, 70px); gap: 20px; justify-content: center; margin: 0 auto; }
@@ -984,16 +985,28 @@ function initFirebase(){
     const cfg = { apiKey: "AIzaSyA3037mG-4lYelAYyJOOBlH2HMphZv3zuw", authDomain: "m-finance1.firebaseapp.com", projectId: "m-finance1" };
     if(!firebase.apps.length) fbApp = firebase.initializeApp(cfg); else fbApp = firebase.app();
     fbAuth = firebase.auth(); fbDb = firebase.firestore();
-    
-    // 1. Always bind state listener immediately
-    fbAuth.onAuthStateChanged(u=>{ 
-        fbUser=u; 
-        if(u) { listenToCloud(u.uid); } 
-        renderProfile(); // Always call this to remove blank screen
+
+    // Safe "instant render": show cached NAME/EMAIL only (never a password)
+    // so the Profile page doesn't flash "signed out" while Firebase re-checks
+    // the real session in the background. Actual data access still requires
+    // Firebase's own secure session token, this is purely cosmetic.
+    try{
+      const cached = JSON.parse(localStorage.getItem('mh_cached_profile')||'null');
+      if(cached && !fbUser){ fbUser = cached; renderProfile(); }
+    }catch(e){}
+
+    fbAuth.onAuthStateChanged(u=>{
+      fbUser = u;
+      if(u){
+        try{ localStorage.setItem('mh_cached_profile', JSON.stringify({email:u.email, displayName:u.displayName, uid:u.uid})); }catch(e){}
+        listenToCloud(u.uid);
+      } else {
+        try{ localStorage.removeItem('mh_cached_profile'); }catch(e){}
+      }
+      renderProfile();
     });
 
-    // 2. Try persistence, but ignore Brave strict blocking errors
-    fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(e => console.warn("Brave block bypassed"));
+    fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(e => console.warn("Persistence fallback — browser privacy settings (e.g. Brave Shields) may be limiting storage"));
 
   } catch(e) { console.error(e); renderProfile(); }
 }
@@ -1040,7 +1053,7 @@ function renderProfile(){
   } else { signedInDiv.style.display='none'; signedOutDiv.style.display='block'; }
 }
 
-function editName() { if(!fbUser) return; const n = prompt("Enter Name:", fbUser.displayName||""); if(n) fbUser.updateProfile({displayName: n.trim()}).then(()=>{ showToast('Updated'); renderProfile(); }); }
+function editName() { if(!fbUser) return; if(typeof fbUser.updateProfile !== 'function'){ showToast('Still confirming session… please wait a moment and try again'); return; } const n = prompt("Enter Name:", fbUser.displayName||""); if(n) fbUser.updateProfile({displayName: n.trim()}).then(()=>{ showToast('Updated'); renderProfile(); }); }
 function toggleTheme(){ const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark'; document.documentElement.setAttribute('data-theme',t); localStorage.setItem('mh_theme',t); document.querySelectorAll('#themeText').forEach(l=>l.textContent=t==='dark'?'Light Mode':'Dark Mode'); document.querySelectorAll('#themeIco').forEach(l=>l.textContent=t==='dark'?'☀️':'🌙'); if(dashChartMonthly) renderDashboardCharts(); }
 function exportData(){ const p = prompt("Backup password:"); if(!p) return; const enc = CryptoJS.AES.encrypt(JSON.stringify({loans, txns, budgets, accounts}), p).toString(); triggerDownload('MyLedger_Backup.enc', enc); showToast('Exported'); }
 function importData(e){ const f=e.target.files[0]; if(!f) return; const p = prompt("Decryption Key:"); const r = new FileReader(); r.onload=ev=>{ try{ const d=JSON.parse(CryptoJS.AES.decrypt(ev.target.result, p).toString(CryptoJS.enc.Utf8)); loans=d.loans; txns=d.txns; budgets=d.budgets; accounts=d.accounts||accounts; saveAll(); showToast("Restored Successfully!"); } catch(err){ showToast("Failed."); } }; r.readAsText(f); e.target.value=''; }
