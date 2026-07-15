@@ -557,12 +557,11 @@
     <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('loanOverlay')">Cancel</button><button class="btn" onclick="saveLoan()">Save Entry</button></div>
   </div>
 </div>
-
 <div class="overlay" id="txnOverlay" onclick="if(event.target===this) closeModal('txnOverlay')">
   <div class="modal">
-    <h3>Transaction Details</h3>
+    <h3 id="txnModalTitle">Transaction Details</h3>
     <input type="hidden" id="txnId">
-    <div class="field"><label>Type</label>
+    <div class="field" id="txnTypeField"><label>Type</label>
       <div class="seg">
         <button type="button" class="on" data-val="expense" onclick="setTxnType('expense')">Expense</button>
         <button type="button" data-val="income" onclick="setTxnType('income')">Income</button>
@@ -776,11 +775,17 @@ function renderSingleAccount() {
 
 function quickBankTxn(type) {
     if(!activeBankId) return;
+    const acc = accounts.find(a=>a.id===activeBankId);
     document.getElementById('txnId').value = '';
     ['Amount','Category','Note'].forEach(k=> document.getElementById('txn'+k).value=''); 
     document.getElementById('txnDate').value=todayStr();
     setTxnType(type); populateAccountDropdowns(); 
     if(type === 'transfer') { document.getElementById('txnFromAccount').value = activeBankId; } else { document.getElementById('txnAccount').value = activeBankId; }
+    // Smart mode: intent is already clear from which quick button was tapped,
+    // so hide the Type selector and show a specific title instead.
+    document.getElementById('txnTypeField').style.display = 'none';
+    const titles = {income:`+ Deposit to ${acc?.name||'Account'}`, expense:`− Spend from ${acc?.name||'Account'}`, transfer:`⇄ Transfer from ${acc?.name||'Account'}`};
+    document.getElementById('txnModalTitle').textContent = titles[type] || 'Transaction Details';
     openModal('txnOverlay');
 }
 
@@ -980,6 +985,8 @@ function openTxnModal(id){
   const uniqueCats = [...new Set(txns.map(t=>t.category).filter(Boolean))];
   document.getElementById('txnCategoryList').innerHTML = uniqueCats.map(c=>`<option value="${c}">`).join('');
   document.getElementById('smartCatHint').style.display = 'none';
+  document.getElementById('txnTypeField').style.display = '';
+  document.getElementById('txnModalTitle').textContent = id ? 'Edit Transaction' : 'Transaction Details';
   document.getElementById('txnId').value = id||'';
   populateAccountDropdowns();
   if(id){ const t = txns.find(x=>x.id===id); ['Amount','Date','Category','Note'].forEach(k=> document.getElementById('txn'+k).value=t[k.toLowerCase()]||''); setTxnType(t.type); if(t.type==='transfer'){ document.getElementById('txnFromAccount').value = t.fromAccountId; document.getElementById('txnToAccount').value = t.toAccountId; }else{ document.getElementById('txnAccount').value = t.accountId; } }
@@ -1151,7 +1158,8 @@ function getDueLists(){
   const overdue = [], dueSoon = [];
   loans.forEach(l=>{
     if(l.status === 'Paid') return;
-    const due = l.returnDate || l.date;
+    if(!l.returnDate) return; // no deadline set — don't treat as due/overdue
+    const due = l.returnDate;
     if(due < today) overdue.push({l, daysOver: daysBetween(due, today)});
     else if(daysBetween(today, due) <= 7) dueSoon.push({l, daysLeft: daysBetween(today, due)});
   });
