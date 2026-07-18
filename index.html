@@ -162,6 +162,15 @@
     .mobile-nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-secondary); font-size: 10.5px; font-weight: 600; cursor: pointer; flex: 1; }
     .mobile-nav-item .ico { font-size: 18px; padding: 6px 14px; border-radius: 50px; transition: 0.3s; }
     .mobile-nav-item.active { color: var(--accent); } .mobile-nav-item.active .ico { background: var(--accent-glow); }
+
+    /* Responsive tables: card-style rows instead of horizontal scroll */
+    .rtable thead { display: none; }
+    .rtable, .rtable tbody, .rtable tr, .rtable td { display: block; width: 100%; }
+    .rtable tr { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; padding: 4px 14px; }
+    .rtable td { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--border); text-align: right; }
+    .rtable td:last-child { border-bottom: none; }
+    .rtable td::before { content: attr(data-label); font-weight: 600; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: .03em; text-align: left; flex-shrink: 0; }
+    .rtable td[data-label=""]::before { content: none; }
   }
   
   @media print {
@@ -646,11 +655,11 @@
     <div style="display:flex; justify-content:space-between; margin-bottom:20px;"><h3>System Reminders</h3><button class="icon-btn" onclick="closeModal('remindersOverlay')">✕</button></div>
     <div class="panel" style="border-left: 4px solid var(--red); padding: 16px; margin-bottom:16px;">
       <h3 style="color:var(--red); margin-bottom:12px; font-size:15px;">⚠ Overdue Loans</h3>
-      <div class="table-wrapper"><table><thead><tr><th>Name</th><th class="right">Amount</th><th class="right">Overdue</th></tr></thead><tbody id="overdueTable"></tbody></table></div>
+      <div class="table-wrapper"><table class="rtable"><thead><tr><th>Name</th><th class="right">Amount</th><th class="right">Overdue</th></tr></thead><tbody id="overdueTable"></tbody></table></div>
     </div>
     <div class="panel" style="border-left: 4px solid var(--accent); padding: 16px;">
       <h3 style="color:var(--accent); margin-bottom:12px; font-size:15px;">📅 Due within 7 Days</h3>
-      <div class="table-wrapper"><table><thead><tr><th>Name</th><th class="right">Amount</th><th class="right">Days Left</th></tr></thead><tbody id="dueSoonTable"></tbody></table></div>
+      <div class="table-wrapper"><table class="rtable"><thead><tr><th>Name</th><th class="right">Amount</th><th class="right">Days Left</th></tr></thead><tbody id="dueSoonTable"></tbody></table></div>
     </div>
   </div>
 </div>
@@ -1240,7 +1249,7 @@ function switchLoanTab(tab) { document.getElementById('btn-tab-entries').classLi
 
 // ---------------- ALERTS ----------------
 function updateReminderBadge(){ const dueInfo = getDueLists(); const total = dueInfo.overdue.length + dueInfo.dueSoon.length; const topBadge = document.getElementById('badgeTop'); const botBadge = document.getElementById('badgeBottom'); if(topBadge) { topBadge.style.display = total ? 'inline-block' : 'none'; topBadge.textContent = total; } if(botBadge) { botBadge.style.display = total ? 'inline-block' : 'none'; botBadge.textContent = total; } }
-function renderReminders(){ const {overdue, dueSoon} = getDueLists(); const ot = document.getElementById('overdueTable'); ot.innerHTML=''; if(!overdue.length) ot.innerHTML='<tr><td colspan="3" class="empty">Zero clear overdue accounts</td></tr>'; overdue.forEach(({l,daysOver})=>{ ot.innerHTML += `<tr><td><div style="font-weight:600;">${l.name}</div></td><td class="right num">${fmt(l.amount)}</td><td class="right num" style="color:var(--red);font-weight:700;">${daysOver}d</td></tr>`; }); const dt = document.getElementById('dueSoonTable'); dt.innerHTML=''; if(!dueSoon.length) dt.innerHTML='<tr><td colspan="3" class="empty">Zero near-term deadlines.</td></tr>'; dueSoon.forEach(({l,daysLeft})=>{ dt.innerHTML += `<tr><td><div style="font-weight:600;">${l.name}</div></td><td class="right num">${fmt(l.amount)}</td><td class="right num" style="color:var(--accent);font-weight:700;">${daysLeft===0?'Today':daysLeft+'d'}</td></tr>`; }); }
+function renderReminders(){ const {overdue, dueSoon} = getDueLists(); const ot = document.getElementById('overdueTable'); ot.innerHTML=''; if(!overdue.length) ot.innerHTML='<tr><td colspan="3" class="empty">Zero clear overdue accounts</td></tr>'; overdue.forEach(({l,daysOver})=>{ ot.innerHTML += `<tr><td data-label="Name"><div style="font-weight:600;">${l.name}</div></td><td data-label="Amount" class="right num">${fmt(l.amount)}</td><td data-label="Overdue" class="right num" style="color:var(--red);font-weight:700;">${daysOver}d</td></tr>`; }); const dt = document.getElementById('dueSoonTable'); dt.innerHTML=''; if(!dueSoon.length) dt.innerHTML='<tr><td colspan="3" class="empty">Zero near-term deadlines.</td></tr>'; dueSoon.forEach(({l,daysLeft})=>{ dt.innerHTML += `<tr><td data-label="Name"><div style="font-weight:600;">${l.name}</div></td><td data-label="Amount" class="right num">${fmt(l.amount)}</td><td data-label="Days Left" class="right num" style="color:var(--accent);font-weight:700;">${daysLeft===0?'Today':daysLeft+'d'}</td></tr>`; }); }
 
 // ---------------- CLOUD CORE (BRAVE BYPASS FIX) ----------------
 function hideAuthGate(){ const g = document.getElementById('authGateOverlay'); if(g) g.style.display='none'; }
@@ -1352,7 +1361,7 @@ function pinClear(){ enteredPin=enteredPin.slice(0,-1); updatePinUI(); }
 function processPin(){
   if(isSettingPin){
     if(!tempPin){ tempPin=enteredPin; enteredPin=''; document.getElementById('lockTitle').textContent='Confirm PIN'; updatePinUI(); }
-    else if(enteredPin===tempPin){ appPin=enteredPin; localStorage.setItem('mh_app_pin',appPin); pushToCloud(); isSettingPin=false; checkLock(); showToast('PIN Secured'); }
+    else if(enteredPin===tempPin){ appPin=enteredPin; localStorage.setItem('mh_app_pin',appPin); pushToCloud(); isSettingPin=false; document.getElementById('appLockOverlay').style.display='none'; enteredPin=''; tempPin=''; updatePinUI(); showToast('PIN Secured'); }
     else{ enteredPin=''; tempPin=''; document.getElementById('lockTitle').textContent='Set PIN'; updatePinUI(); showToast('Mismatch'); }
   }else{ if(enteredPin===appPin){ document.getElementById('appLockOverlay').style.display='none'; enteredPin=''; updatePinUI(); } else { enteredPin=''; updatePinUI(); showToast('Denied'); } }
 }
